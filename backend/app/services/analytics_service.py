@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, timedelta, timezone
 
-from sqlalchemy import case, func, select
+from sqlalchemy import String, case, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.customer import Customer
@@ -106,7 +106,7 @@ async def get_geo_breakdown(db: AsyncSession, profile_id: uuid.UUID, days: int |
             func.count(Order.id).label("order_count"),
             func.coalesce(func.sum(Order.total_amount), 0).label("total_revenue"),
         )
-        .where(Order.profile_id == profile_id, Order.status != "cancelled")
+        .where(Order.profile_id == profile_id, cast(Order.status, String) != "cancelled")
         .group_by("neighborhood")
         .order_by(func.count(Order.id).desc())
         .limit(limit)
@@ -150,7 +150,7 @@ async def get_peak_hours(db: AsyncSession, profile_id: uuid.UUID, days: int | No
             func.extract("hour", Order.created_at).label("hour"),
             func.count(Order.id).label("order_count"),
         )
-        .where(Order.profile_id == profile_id, Order.status != "cancelled")
+        .where(Order.profile_id == profile_id, cast(Order.status, String) != "cancelled")
         .group_by("hour")
         .order_by("hour")
     )
@@ -182,6 +182,7 @@ async def get_followup_performance(db: AsyncSession, profile_id: uuid.UUID, days
         .where(
             FollowupSend.profile_id == profile_id,
             FollowupSend.result == "commande",
+            cast(Order.status, String) != "cancelled",
             Order.created_at >= FollowupSend.sent_at,
             Order.created_at <= FollowupSend.sent_at + timedelta(hours=48),
         )
@@ -221,7 +222,7 @@ async def get_negotiation_impact(db: AsyncSession, profile_id: uuid.UUID, days: 
             0,
         ).label("avg_discount_pct"),
     ).select_from(Order).join(OrderItem, OrderItem.order_id == Order.id).where(
-        Order.profile_id == profile_id, Order.status != "cancelled"
+        Order.profile_id == profile_id, cast(Order.status, String) != "cancelled"
     )
     if since:
         query = query.where(Order.created_at >= since)
