@@ -1,2 +1,6 @@
+packages:
+  - 'app'
+  - 'backend'
+
 allowBuilds:
   sharp: true
