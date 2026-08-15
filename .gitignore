@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.env*.local
+.env
+!.env.example
+
+# Backend (Python)
+backend/venv/
+backend/.env
+backend/uploads/
+__pycache__/
+**/__pycache__/
+*.pyc
