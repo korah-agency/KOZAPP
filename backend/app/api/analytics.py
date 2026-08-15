@@ -3,8 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_profile, get_db_session
 from app.models.profile import Profile
-from app.schemas.analytics import AnalyticsSummary, DailySales, TopProduct
-from app.services.analytics_service import get_daily_sales, get_summary, get_top_products
+from app.schemas.analytics import AnalyticsInsights, AnalyticsSummary, DailySales, TopProduct
+from app.services.analytics_service import get_daily_sales, get_insights, get_summary, get_top_products
 
 router = APIRouter(prefix="/api/analytics", tags=["analytics"])
 
@@ -35,7 +35,7 @@ async def summary(
     db: AsyncSession = Depends(get_db_session),
     current_profile: Profile = Depends(get_current_profile),
 ):
-    base = await get_summary(db, current_profile.id, days)
+    base = await get_summary(db, current_profile, days)
     daily = await get_daily_sales(db, current_profile.id, days or 30)
     top = await get_top_products(db, current_profile.id, 10)
     return AnalyticsSummary(
@@ -45,4 +45,14 @@ async def summary(
         average_order_value=base["average_order_value"],
         daily_sales=[DailySales(**d) for d in daily],
         top_products=[TopProduct(**d) for d in top],
+        quota=base["quota"],
     )
+
+
+@router.get("/insights", response_model=AnalyticsInsights)
+async def insights(
+    days: int | None = Query(30, ge=1, le=365, description="Fenetre d'analyse ; omis = toute la periode"),
+    db: AsyncSession = Depends(get_db_session),
+    current_profile: Profile = Depends(get_current_profile),
+):
+    return AnalyticsInsights(**await get_insights(db, current_profile, days))

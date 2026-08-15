@@ -64,3 +64,20 @@ async def increment_followup_usage(db: AsyncSession, profile_id: uuid.UUID) -> N
     counter = await _get_or_create_counter(db, profile_id)
     counter.followups_count = (counter.followups_count or 0) + 1
     await db.flush()
+
+
+async def get_quota_usage(db: AsyncSession, profile: Profile) -> dict:
+    """Detail complet de consommation, pour l'affichage tableau de bord
+    (distinct de verifier_limite_quota, qui ne renvoie que la decision
+    allow/deny cote agent)."""
+    quotas = PLAN_QUOTAS.get(profile.plan, PLAN_QUOTAS["decouverte"])
+    counter = await _get_or_create_counter(db, profile.id)
+    return {
+        "plan": profile.plan,
+        "conversations_used": counter.conversations_count,
+        "conversations_limit": quotas["conversations"],
+        "followups_used": counter.followups_count,
+        "followups_limit": quotas["followups"],
+        "period_start": counter.period_start.isoformat(),
+        "period_end": counter.period_end.isoformat(),
+    }
