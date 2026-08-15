@@ -63,11 +63,25 @@ COMMENT ON COLUMN order_items.list_price IS 'Prix catalogue au moment de la comm
 -- ------------------------------------------------------------
 -- L'ancien enum conversation_state decrivait l'automate a mots-cles ; il ne
 -- correspond plus a un agent en conversation libre. On elargit la colonne
--- en texte libre, remplie desormais par l'agent lui-meme.
+-- en texte libre, remplie desormais par l'agent lui-meme. v_customers_list
+-- depend de cette colonne (regle _RETURN) : on la retire le temps du ALTER
+-- puis on la recree a l'identique (definition reprise de schema_supabase_
+-- whatsapp_orders.sql section 5).
+DROP VIEW IF EXISTS v_customers_list;
+
 ALTER TABLE whatsapp_conversations ALTER COLUMN state DROP DEFAULT;
 ALTER TABLE whatsapp_conversations ALTER COLUMN state TYPE VARCHAR(30) USING state::text;
 ALTER TABLE whatsapp_conversations ALTER COLUMN state SET DEFAULT 'active';
 DROP TYPE IF EXISTS conversation_state;
+
+CREATE OR REPLACE VIEW v_customers_list AS
+SELECT
+    c.id, c.profile_id, c.name, c.whatsapp_phone, c.city, c.neighborhood,
+    c.total_orders, c.total_spent, c.last_order_at,
+    wc.id AS conversation_id, wc.state AS conversation_state,
+    wc.last_message_at, wc.message_count
+FROM customers c
+LEFT JOIN whatsapp_conversations wc ON wc.customer_id = c.id AND wc.is_active = TRUE;
 
 ALTER TABLE whatsapp_conversations ADD COLUMN IF NOT EXISTS summary TEXT;
 ALTER TABLE whatsapp_conversations ADD COLUMN IF NOT EXISTS summary_upto_message_id UUID;
