@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -22,8 +23,23 @@ from app.api.team import router as team_router
 from app.api.webhooks import router as webhooks_router
 from app.config import settings
 from app.database import init_db
+from app.services.followups import run_followup_cycle
 
 logger = logging.getLogger(__name__)
+
+FOLLOWUP_CYCLE_SECONDS = 3600
+
+
+async def _followup_scheduler_loop() -> None:
+    """Planificateur de fond minimal : verifie les relances dues toutes les
+    heures. Chaque tour n'envoie que ce qui est du a l'instant present, ce
+    qui etale naturellement les envois plutot que de les regrouper."""
+    while True:
+        await asyncio.sleep(FOLLOWUP_CYCLE_SECONDS)
+        try:
+            await run_followup_cycle()
+        except Exception:
+            logger.exception("Le cycle de relances planifie a echoue")
 
 
 @asynccontextmanager
@@ -31,7 +47,9 @@ async def lifespan(app: FastAPI):
     logger.info("Starting Kozapp API - environment: %s", settings.ENVIRONMENT)
     await init_db()
     logger.info("Database initialized")
+    scheduler_task = asyncio.create_task(_followup_scheduler_loop())
     yield
+    scheduler_task.cancel()
     logger.info("Shutting down Kozapp API")
 
 

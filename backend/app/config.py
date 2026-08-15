@@ -21,6 +21,22 @@ class Settings(BaseSettings):
     # propre compte WhatsApp Business.
     WHATSAPP_VERIFY_TOKEN: str = "change_me_verify_token"
     WHATSAPP_API_VERSION: str = "v21.0"
+    # App Secret Meta (Developer Portal > Parametres > Basique). Sert a verifier
+    # la signature HMAC (X-Hub-Signature-256) de chaque webhook entrant -- sans
+    # elle, n'importe qui connaissant l'URL du webhook peut injecter de faux
+    # messages et declencher de vraies commandes.
+    WHATSAPP_APP_SECRET: str = ""
+
+    # Passerelle OpenRouter (moteur de l'agent). Cle sur openrouter.ai/keys.
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_BASE_URL: str = "https://openrouter.ai/api/v1"
+    # Modeles par defaut ; le slug exact est a confirmer sur openrouter.ai/models
+    # au moment du deploiement (nommage susceptible d'evoluer). profiles.agent_model
+    # peut surcharger ce choix par boutique (paliers superieurs).
+    AGENT_MODEL_DEFAULT: str = "google/gemini-2.5-flash-lite"
+    AGENT_MODEL_PREMIUM: str = "google/gemini-2.5-flash"
+    AGENT_MAX_TOOL_ITERATIONS: int = 6
+    AGENT_SUMMARY_TRIGGER_MESSAGES: int = 20
 
     ENVIRONMENT: str = "development"
     SECRET_KEY: str = "change_me"

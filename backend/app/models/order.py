@@ -23,8 +23,11 @@ class Order(Base):
     order_number: Mapped[str] = mapped_column(String(20), unique=True, nullable=False, index=True)
     status: Mapped[str] = mapped_column(String(30), default="pending", index=True)
     subtotal: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    delivery_fee: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
+    discount_total: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False, default=0)
     total_amount: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), default="XAF")
+    source: Mapped[str] = mapped_column(String(20), default="agent")
     delivery_address: Mapped[str | None] = mapped_column(Text)
     delivery_city: Mapped[str | None] = mapped_column(String(100))
     delivery_neighborhood: Mapped[str | None] = mapped_column(String(100))
@@ -58,6 +61,9 @@ class OrderItem(Base):
     )
     quantity: Mapped[int] = mapped_column(nullable=False)
     unit_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
+    list_price: Mapped[float | None] = mapped_column(Numeric(10, 2))
+    """Prix catalogue au moment de la commande, avant remise negociee
+    (unit_price = prix reellement facture)."""
     subtotal: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     product_name: Mapped[str] = mapped_column(String(255), nullable=False)
 

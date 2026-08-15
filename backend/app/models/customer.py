@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text, UniqueConstraint, func
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -26,6 +26,8 @@ class Customer(Base):
     total_orders: Mapped[int] = mapped_column(default=0)
     total_spent: Mapped[float] = mapped_column(Numeric(12, 2), default=0.0)
     last_order_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    preferences: Mapped[dict | None] = mapped_column(JSONB, default=dict)
+    opt_out: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

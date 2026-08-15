@@ -43,6 +43,29 @@ async def send_whatsapp_message(
         return {"success": False, "message_id": None, "error": str(e)}
 
 
+async def download_whatsapp_media(media_id: str, token: str) -> tuple[bytes, str] | None:
+    """Recupere un media entrant (ex. note vocale) : d'abord l'URL signee
+    aupres du Graph API, puis le contenu binaire lui-meme. Renvoie
+    (contenu, mime_type) ou None en cas d'echec."""
+    headers = {"Authorization": f"Bearer {token}"}
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            meta_resp = await client.get(
+                f"https://graph.facebook.com/{settings.WHATSAPP_API_VERSION}/{media_id}", headers=headers
+            )
+            meta_resp.raise_for_status()
+            media_url = meta_resp.json().get("url")
+            if not media_url:
+                return None
+            file_resp = await client.get(media_url, headers=headers)
+            file_resp.raise_for_status()
+            mime_type = file_resp.headers.get("content-type", "audio/ogg")
+            return file_resp.content, mime_type
+    except httpx.HTTPError as e:
+        logger.error("Telechargement media WhatsApp echoue (%s): %s", media_id, e)
+        return None
+
+
 async def send_whatsapp_template(
     phone_number: str,
     template_name: str,

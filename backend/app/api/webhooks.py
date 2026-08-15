@@ -1,7 +1,7 @@
+import hashlib
+import hmac
 import json
 import logging
-import random
-import string
 from datetime import datetime, timezone
 from typing import Any
 
@@ -12,13 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.deps import get_db_session
 from app.config import settings
 from app.models.customer import Customer
-from app.models.order import Order, OrderItem
-from app.models.order_status_history import OrderStatusHistory
-from app.models.product import Product
 from app.models.profile import Profile
 from app.models.whatsapp_conversation import WhatsAppConversation
 from app.models.whatsapp_message import WhatsAppMessage
-from app.services.whatsapp import send_whatsapp_message
+from app.services.agent.engine import run_agent_turn
+from app.services.agent.quota import increment_conversation_usage
+from app.services.agent.summarizer import maybe_summarize
+from app.services.followups import mark_followups_answered
+from app.services.whatsapp import download_whatsapp_media, send_whatsapp_message
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/webhooks", tags=["webhooks"])
@@ -38,12 +39,33 @@ async def verify_webhook(
     )
 
 
+def _verify_signature(raw_body: bytes, signature_header: str | None) -> bool:
+    """Verifie X-Hub-Signature-256 (HMAC-SHA256 du corps brut avec l'App
+    Secret Meta). Sans ce controle, n'importe qui connaissant l'URL du
+    webhook peut injecter de faux messages et declencher de vraies
+    commandes. En dev sans App Secret configure, on laisse passer pour ne
+    pas bloquer les tests locaux ; en production, on refuse."""
+    app_secret = settings.WHATSAPP_APP_SECRET
+    if not app_secret:
+        return settings.ENVIRONMENT != "production"
+    if not signature_header or not signature_header.startswith("sha256="):
+        return False
+    expected = hmac.new(app_secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    provided = signature_header.split("=", 1)[1]
+    return hmac.compare_digest(expected, provided)
+
+
 @router.post("/whatsapp")
 async def receive_whatsapp_message(
     request: Request,
     db: AsyncSession = Depends(get_db_session),
 ) -> dict[str, str]:
-    body = await request.json()
+    raw_body = await request.body()
+    if not _verify_signature(raw_body, request.headers.get("x-hub-signature-256")):
+        logger.warning("Signature webhook WhatsApp invalide, requete rejetee")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Invalid signature")
+
+    body = json.loads(raw_body or b"{}")
     entry = body.get("entry", [{}])[0]
     changes = entry.get("changes", [{}])[0]
     value = changes.get("value", {})
@@ -57,10 +79,26 @@ async def receive_whatsapp_message(
         return {"status": "ignored"}
 
     if messages:
-        await _handle_incoming_message(messages[0], value, profile, db)
+        message = messages[0]
+        # Meta rejoue parfois ses webhooks : sans ce controle, un rejeu
+        # relancerait tout le pipeline agent (et pourrait doubler une commande).
+        if await _already_processed(db, message.get("id")):
+            return {"status": "duplicate_ignored"}
+        contacts = value.get("contacts", [{}])
+        contact_name = contacts[0].get("profile", {}).get("name", "") if contacts else ""
+        await _handle_incoming_message(message, contact_name, profile, db)
     elif statuses:
         await _handle_status_update(statuses[0], db)
     return {"status": "ok"}
+
+
+async def _already_processed(db: AsyncSession, whatsapp_message_id: str | None) -> bool:
+    if not whatsapp_message_id:
+        return False
+    result = await db.execute(
+        select(WhatsAppMessage.id).where(WhatsAppMessage.whatsapp_message_id == whatsapp_message_id)
+    )
+    return result.scalar_one_or_none() is not None
 
 
 async def _get_profile_for_phone_number_id(db: AsyncSession, phone_number_id: str | None) -> Profile | None:
@@ -86,37 +124,97 @@ async def _get_profile_for_phone_number_id(db: AsyncSession, phone_number_id: st
 
 async def _handle_incoming_message(
     message: dict[str, Any],
-    value: dict[str, Any],
+    contact_name: str,
     profile: Profile,
     db: AsyncSession,
 ) -> None:
     phone = message.get("from", "")
     message_type = message.get("type", "text")
     message_id = message.get("id", "")
+
+    customer = await _get_or_create_customer(profile.id, phone, contact_name, db)
+    conversation, is_new = await _get_or_create_conversation(profile.id, customer.id, db)
+    if is_new:
+        await increment_conversation_usage(db, profile.id)
+
+    now = datetime.now(timezone.utc)
+    audio_bytes: bytes | None = None
+    audio_format = "ogg"
+    content = ""
+
     if message_type == "text":
         content = message.get("text", {}).get("body", "")
+    elif message_type == "audio":
+        media_id = message.get("audio", {}).get("id")
+        content = "[Note vocale]"
+        if media_id and profile.whatsapp_token:
+            downloaded = await download_whatsapp_media(media_id, profile.whatsapp_token)
+            if downloaded:
+                audio_bytes, mime_type = downloaded
+                audio_format = (mime_type.split("/")[-1].split(";")[0]) if mime_type else "ogg"
+        incoming_msg = WhatsAppMessage(
+            conversation_id=conversation.id,
+            direction="incoming",
+            message_type="audio",
+            content=content,
+            whatsapp_message_id=message_id,
+            media_id=media_id,
+            media_mime_type=audio_format,
+        )
+        db.add(incoming_msg)
     elif message_type == "image":
         content = message.get("image", {}).get("caption", "[Image]")
     elif message_type == "button":
         content = message.get("button", {}).get("text", "")
     else:
         content = f"[{message_type}]"
-    contacts = value.get("contacts", [{}])
-    contact_name = contacts[0].get("profile", {}).get("name", "") if contacts else ""
-    customer = await _get_or_create_customer(profile.id, phone, contact_name, db)
-    conversation = await _get_or_create_conversation(profile.id, customer.id, db)
-    incoming_msg = WhatsAppMessage(
-        conversation_id=conversation.id,
-        direction="incoming",
-        message_type=message_type,
-        content=content,
-        whatsapp_message_id=message_id,
-    )
-    db.add(incoming_msg)
+
+    if message_type != "audio":
+        db.add(
+            WhatsAppMessage(
+                conversation_id=conversation.id,
+                direction="incoming",
+                message_type=message_type,
+                content=content,
+                whatsapp_message_id=message_id,
+            )
+        )
+
     conversation.message_count = (conversation.message_count or 0) + 1
-    conversation.last_message_at = datetime.now(timezone.utc)
+    conversation.last_message_at = now
+    conversation.last_inbound_at = now
     await db.flush()
-    await _process_conversation_state(profile, customer, conversation, content, db)
+
+    reply_text = await run_agent_turn(
+        db,
+        profile,
+        customer,
+        conversation,
+        user_text=content if message_type != "audio" else None,
+        audio_bytes=audio_bytes,
+        audio_format=audio_format,
+    )
+
+    if reply_text and profile.whatsapp_token and profile.whatsapp_phone_number_id:
+        send_result = await send_whatsapp_message(
+            phone, reply_text, token=profile.whatsapp_token, phone_number_id=profile.whatsapp_phone_number_id
+        )
+        db.add(
+            WhatsAppMessage(
+                conversation_id=conversation.id,
+                direction="outgoing",
+                message_type="text",
+                content=reply_text,
+                whatsapp_message_id=send_result.get("message_id"),
+                status="sent" if send_result.get("success") else "failed",
+                error_message=send_result.get("error"),
+            )
+        )
+        conversation.message_count = (conversation.message_count or 0) + 1
+        await db.flush()
+
+    await mark_followups_answered(db, customer, conversation.outcome)
+    await maybe_summarize(db, conversation)
 
 
 async def _handle_status_update(status_data: dict[str, Any], db: AsyncSession) -> None:
@@ -148,314 +246,16 @@ async def _get_or_create_customer(
 
 async def _get_or_create_conversation(
     profile_id: Any, customer_id: Any, db: AsyncSession
-) -> WhatsAppConversation:
+) -> tuple[WhatsAppConversation, bool]:
     result = await db.execute(
         select(WhatsAppConversation)
-        .where(WhatsAppConversation.customer_id == customer_id)
+        .where(WhatsAppConversation.customer_id == customer_id, WhatsAppConversation.is_active.is_(True))
         .order_by(WhatsAppConversation.created_at.desc())
     )
     conversation = result.scalars().first()
-    if not conversation or conversation.state == "closed" or not conversation.is_active:
-        conversation = WhatsAppConversation(profile_id=profile_id, customer_id=customer_id, state="idle")
-        db.add(conversation)
-        await db.flush()
-    return conversation
-
-
-async def _reply(profile: Profile, phone: str, message: str) -> None:
-    if not profile.whatsapp_token or not profile.whatsapp_phone_number_id:
-        logger.warning("Profil %s sans token/phone_number_id WhatsApp configure, message non envoye", profile.id)
-        return
-    await send_whatsapp_message(
-        phone, message, token=profile.whatsapp_token, phone_number_id=profile.whatsapp_phone_number_id
-    )
-
-
-async def _process_conversation_state(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    content: str,
-    db: AsyncSession,
-) -> None:
-    state = conversation.state
-    text = content.strip().lower()
-    if state == "idle":
-        await _handle_idle_state(profile, customer, conversation, text, db)
-    elif state == "awaiting_product_choice":
-        await _handle_product_choice(profile, customer, conversation, text, db)
-    elif state == "awaiting_quantity":
-        await _handle_quantity(profile, customer, conversation, text, db)
-    elif state == "awaiting_delivery_address":
-        await _handle_delivery_address(profile, customer, conversation, content, db)
-    elif state == "awaiting_confirmation":
-        await _handle_confirmation(profile, customer, conversation, text, db)
-    elif state == "order_active":
-        await _handle_order_active(profile, customer, conversation, text, db)
-
-
-async def _handle_idle_state(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    text: str,
-    db: AsyncSession,
-) -> None:
-    greetings = ["bonjour", "salut", "hello", "bonsoir", "hey", "coucou"]
-    menu_keywords = ["menu", "commander", "commande", "catalogue", "produits"]
-    if any(g in text for g in greetings):
-        await _reply(
-            profile,
-            customer.whatsapp_phone,
-            "Bonjour {} ! \n\n"
-            "Bienvenue sur *{}* !\n\n"
-            "Tapez *menu* pour voir nos produits\n"
-            "Tapez *commande* pour passer une commande\n"
-            "Tapez *aide* pour obtenir de l'aide".format(customer.name or "", profile.shop_name),
-        )
-    elif any(k in text for k in menu_keywords):
-        result = await db.execute(
-            select(Product)
-            .where(Product.profile_id == profile.id, Product.is_available == True)  # noqa: E712
-            .order_by(Product.name)
-        )
-        products = result.scalars().all()
-        if products:
-            menu_text = "*Notre Carte*\n\n"
-            for i, p in enumerate(products, 1):
-                menu_text += "*{}. {}*\n".format(i, p.name)
-                menu_text += "   {:,.0f} FCFA".format(p.price)
-                if p.description:
-                    menu_text += "\n   {}".format(p.description[:60])
-                menu_text += "\n\n"
-            menu_text += "Tapez le *numéro* du produit pour commander"
-            await _reply(profile, customer.whatsapp_phone, menu_text)
-            conversation.state = "awaiting_product_choice"
-        else:
-            await _reply(profile, customer.whatsapp_phone, "Desole, aucun produit disponible pour le moment.")
-    elif text in ("aide", "help"):
-        await _reply(
-            profile,
-            customer.whatsapp_phone,
-            "*Aide*\n\n"
-            "- *menu* : Voir le catalogue\n"
-            "- *commande* : Passer une commande\n"
-            "- *suivi* : Suivre votre commande\n"
-            "- *annuler* : Annuler la commande en cours\n\n"
-            "Besoin d'aide ? Ecrivez-nous !",
-        )
-    elif text == "suivi":
-        result = await db.execute(
-            select(Order)
-            .where(Order.profile_id == profile.id, Order.customer_id == customer.id)
-            .order_by(Order.created_at.desc())
-        )
-        last_order = result.scalars().first()
-        if last_order:
-            status_map = {
-                "pending": "En attente",
-                "confirmed": "Confirmee",
-                "delivering": "En livraison",
-                "delivered": "Livree",
-                "cancelled": "Annulee",
-            }
-            status_text = status_map.get(last_order.status, last_order.status)
-            await _reply(
-                profile,
-                customer.whatsapp_phone,
-                "Commande *{}*\nStatut : {}\nTotal : {:,.0f} FCFA".format(
-                    last_order.order_number, status_text, last_order.total_amount
-                ),
-            )
-        else:
-            await _reply(profile, customer.whatsapp_phone, "Vous n'avez aucune commande en cours.")
-    else:
-        await _reply(profile, customer.whatsapp_phone, "Je n'ai pas compris. Tapez *menu* pour voir nos produits.")
-
-
-async def _handle_product_choice(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    text: str,
-    db: AsyncSession,
-) -> None:
-    if text == "annuler":
-        conversation.state = "idle"
-        await _reply(profile, customer.whatsapp_phone, "Commande annulee. Tapez *menu* pour recommencer.")
-        return
-    if text.isdigit():
-        result = await db.execute(
-            select(Product)
-            .where(Product.profile_id == profile.id, Product.is_available == True)  # noqa: E712
-            .order_by(Product.name)
-        )
-        products = result.scalars().all()
-        idx = int(text) - 1
-        if 0 <= idx < len(products):
-            product = products[idx]
-            conversation.context = {
-                "product_id": str(product.id),
-                "product_name": product.name,
-                "unit_price": float(product.price),
-            }
-            conversation.state = "awaiting_quantity"
-            await _reply(
-                profile,
-                customer.whatsapp_phone,
-                "*{}*\nPrix : {:,.0f} FCFA\n\n"
-                "Combien en souhaitez-vous ?\nTapez un *nombre*.".format(product.name, product.price),
-            )
-        else:
-            await _reply(profile, customer.whatsapp_phone, "Numero invalide. Tapez le bon numero.")
-    else:
-        await _reply(profile, customer.whatsapp_phone, "Veuillez taper le numero du produit.")
-
-
-async def _handle_quantity(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    text: str,
-    db: AsyncSession,
-) -> None:
-    if text == "annuler":
-        conversation.state = "idle"
-        conversation.context = {}
-        await _reply(profile, customer.whatsapp_phone, "Commande annulee. Tapez *menu* pour recommencer.")
-        return
-    if text.isdigit() and int(text) > 0:
-        ctx = dict(conversation.context or {})
-        ctx["quantity"] = int(text)
-        ctx["subtotal"] = ctx.get("unit_price", 0) * int(text)
-        conversation.context = ctx
-        conversation.state = "awaiting_delivery_address"
-        await _reply(
-            profile,
-            customer.whatsapp_phone,
-            "*{}* x {} = {:,.0f} FCFA\n\n"
-            "Ou voulez-vous etre livré ?\n"
-            "Envoyez votre *adresse complete* (quartier, ville).".format(
-                ctx.get("product_name", ""), int(text), ctx.get("subtotal", 0)
-            ),
-        )
-    else:
-        await _reply(profile, customer.whatsapp_phone, "Veuillez taper un nombre valide.")
-
-
-async def _handle_delivery_address(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    content: str,
-    db: AsyncSession,
-) -> None:
-    ctx = dict(conversation.context or {})
-    ctx["delivery_address"] = content.strip()
-    conversation.context = ctx
-    conversation.state = "awaiting_confirmation"
-    await _reply(
-        profile,
-        customer.whatsapp_phone,
-        "*Resume de votre commande*\n\n"
-        "Produit : *{}*\n"
-        "Quantite : *{}*\n"
-        "Sous-total : *{:,.0f} FCFA*\n"
-        "Adresse : *{}*\n\n"
-        "Tapez *oui* pour confirmer\n"
-        "Tapez *non* pour annuler".format(
-            ctx.get("product_name", ""),
-            ctx.get("quantity", 0),
-            ctx.get("subtotal", 0),
-            ctx.get("delivery_address", ""),
-        ),
-    )
-
-
-async def _handle_confirmation(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    text: str,
-    db: AsyncSession,
-) -> None:
-    if text in ("oui", "yes", "ok", "confirmer", "confirme"):
-        ctx = dict(conversation.context or {})
-        now = datetime.now(timezone.utc)
-        date_str = now.strftime("%Y%m%d")
-        rand_suffix = "".join(random.choices(string.digits, k=4))
-        order_number = "KOZ-{}-{}".format(date_str, rand_suffix)
-        subtotal = ctx.get("subtotal", 0)
-        order = Order(
-            profile_id=profile.id,
-            customer_id=customer.id,
-            order_number=order_number,
-            status="pending",
-            subtotal=subtotal,
-            total_amount=subtotal,
-            delivery_address=ctx.get("delivery_address"),
-            delivery_city=None,
-        )
-        db.add(order)
-        await db.flush()
-        item = OrderItem(
-            order_id=order.id,
-            product_id=ctx.get("product_id"),
-            product_name=ctx.get("product_name", ""),
-            quantity=ctx.get("quantity", 1),
-            unit_price=ctx.get("unit_price", 0),
-            subtotal=subtotal,
-        )
-        db.add(item)
-        history = OrderStatusHistory(
-            order_id=order.id,
-            old_status=None,
-            new_status="pending",
-            changed_by="bot",
-            note="Commande creee via WhatsApp",
-        )
-        db.add(history)
-        customer.total_orders = (customer.total_orders or 0) + 1
-        customer.total_spent = (customer.total_spent or 0) + subtotal
-        customer.last_order_at = now
-        conversation.state = "order_active"
-        conversation.context = {"active_order_id": str(order.id)}
-        await _reply(
-            profile,
-            customer.whatsapp_phone,
-            "Commande *{}* confirmee !\n\n"
-            "Total : *{:,.0f} FCFA*\n"
-            "Adresse : *{}*\n\n"
-            "Nous vous tenons informe de l'avancement. Merci !".format(
-                order_number, subtotal, ctx.get("delivery_address", "")
-            ),
-        )
-    elif text in ("non", "no", "annuler", "cancel"):
-        conversation.state = "idle"
-        conversation.context = {}
-        await _reply(profile, customer.whatsapp_phone, "Commande annulee. Tapez *menu* pour recommencer.")
-    else:
-        await _reply(profile, customer.whatsapp_phone, "Tapez *oui* pour confirmer ou *non* pour annuler.")
-
-
-async def _handle_order_active(
-    profile: Profile,
-    customer: Customer,
-    conversation: WhatsAppConversation,
-    text: str,
-    db: AsyncSession,
-) -> None:
-    keywords_menu = ["menu", "commander", "commande", "nouvelle commande"]
-    if any(k in text for k in keywords_menu):
-        conversation.state = "idle"
-        await _handle_idle_state(profile, customer, conversation, "menu", db)
-    elif text == "suivi":
-        await _handle_idle_state(profile, customer, conversation, "suivi", db)
-    else:
-        await _reply(
-            profile,
-            customer.whatsapp_phone,
-            "Votre commande est en cours.\n"
-            "Tapez *menu* pour une nouvelle commande\n"
-            "Tapez *suivi* pour suivre votre commande.",
-        )
+    if conversation:
+        return conversation, False
+    conversation = WhatsAppConversation(profile_id=profile_id, customer_id=customer_id, state="active")
+    db.add(conversation)
+    await db.flush()
+    return conversation, True

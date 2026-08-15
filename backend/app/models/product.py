@@ -28,6 +28,8 @@ class Product(Base):
     image_url: Mapped[str | None] = mapped_column(String(500))
     is_available: Mapped[bool] = mapped_column(Boolean, default=True)
     is_featured: Mapped[bool] = mapped_column(Boolean, default=False)
+    track_stock: Mapped[bool] = mapped_column(Boolean, default=False)
+    stock_quantity: Mapped[int | None] = mapped_column(Integer)
     sold_count: Mapped[int] = mapped_column(Integer, default=0)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
     created_at: Mapped[datetime] = mapped_column(
