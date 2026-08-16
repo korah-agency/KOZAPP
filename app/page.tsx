@@ -63,7 +63,7 @@ const T = {
       agent: [
         { title: "Réponse instantanée 24h/24", stat: "24h/24", desc: "Votre agent comprend français, anglais et pidgin. Il répond comme vous le feriez, avec le ton de votre boutique.", statLabel: "disponible" },
         { title: "Comprend les vocaux", stat: "2 langues", desc: "Les notes vocales de vos clients sont comprises et traitées comme du texte. Pas de perte d'information.", statLabel: "" },
-        { title: "Négocie intelligemment", stat: "0 perte", desc: "L'IA négocie dans les marges que vous fixez. Jamais en dessous de votre prix plancher.", statLabel: "de marge préservée" },
+        { title: "Négocie intelligemment", stat: "0 perte", desc: "L'IA négocie dans les marges que vous fixez. Jamais en dessous de votre prix plancher.", statLabel: "de marge" },
       ],
       gestion: [
         { title: "Commandes centralisées", stat: "100%", desc: "Chaque commande WhatsApp est enregistrée, suivie et archivée dans votre tableau de bord. Zéro commande oubliée.", statLabel: "automatisé" },
@@ -187,7 +187,7 @@ const T = {
       agent: [
         { title: "Instant replies, 24/7", stat: "24/7", desc: "Your agent understands French, English, and Pidgin. It replies the way you would, in your shop's tone.", statLabel: "available" },
         { title: "Understands voice notes", stat: "2 languages", desc: "Your customers' voice notes are understood and handled just like text. Nothing gets lost.", statLabel: "" },
-        { title: "Negotiates intelligently", stat: "0 loss", desc: "The AI negotiates within the margins you set. Never below your floor price.", statLabel: "margin preserved" },
+        { title: "Negotiates intelligently", stat: "0 loss", desc: "The AI negotiates within the margins you set. Never below your floor price.", statLabel: "margin" },
       ],
       gestion: [
         { title: "Centralized orders", stat: "100%", desc: "Every WhatsApp order is recorded, tracked, and archived in your dashboard. Zero orders forgotten.", statLabel: "automated" },
