@@ -154,6 +154,7 @@ export type DashboardT = {
     conversationsUsed: string; followupsUsed: string;
     highUsageWarning: string;
     noData: string;
+    revenueTrendTitle: string; revenueTrendSubtitle: string;
   };
   confirmClose: { title: string; text: string; cancel: string; confirm: string };
   changePasswordModal: {
@@ -330,6 +331,7 @@ const dashboardFr: DashboardT = {
     conversationsUsed: "Conversations", followupsUsed: "Relances",
     highUsageWarning: "Palier bientôt atteint",
     noData: "Pas encore de données pour cette période.",
+    revenueTrendTitle: "Tendance du chiffre d'affaires", revenueTrendSubtitle: "Évolution jour par jour",
   },
   confirmClose: {
     title: "Fermer définitivement votre compte ?",
@@ -515,6 +517,7 @@ const dashboardEn: DashboardT = {
     conversationsUsed: "Conversations", followupsUsed: "Follow-ups",
     highUsageWarning: "Plan limit approaching",
     noData: "No data for this period yet.",
+    revenueTrendTitle: "Revenue trend", revenueTrendSubtitle: "Day-by-day evolution",
   },
   confirmClose: {
     title: "Permanently close your account?",
