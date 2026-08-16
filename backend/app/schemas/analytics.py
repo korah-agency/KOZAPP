@@ -94,6 +94,7 @@ class CustomerSegments(BaseModel):
 
 
 class AnalyticsInsights(BaseModel):
+    daily_sales: list[DailySales]
     geo_breakdown: list[GeoBreakdownItem]
     conversion: ConversionStats
     peak_hours: list[PeakHourItem]
