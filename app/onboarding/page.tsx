@@ -16,6 +16,7 @@ function OnboardingContent() {
   const [whatsappValid, setWhatsappValid] = useState(false);
   const [role, setRole] = useState("");
   const [otherRole, setOtherRole] = useState("");
+  const [otherNeed, setOtherNeed] = useState("");
 
   const sources = [
     { icon: <Facebook size={22} />, label: t.sourceFacebook },
@@ -127,6 +128,15 @@ function OnboardingContent() {
                   {n}
                 </button>
               ))}
+              {selectedNeed === t.needs[t.needs.length - 1] && (
+                <input
+                  type="text"
+                  className="ob2-need-other"
+                  value={otherNeed}
+                  onChange={e => setOtherNeed(e.target.value)}
+                  placeholder={t.needOtherPlaceholder}
+                />
+              )}
             </div>
           </>
         )}

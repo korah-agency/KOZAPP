@@ -499,7 +499,9 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .ob2-info-box { padding: 14px 16px; background: #f6faf7; border: 1px solid #d6f0de; border-radius: 10px; margin-top: 4px; }
 .ob2-info-box p { margin: 0; color: #4a6b55; font-size: 12px; line-height: 1.65; }
 
-.ob2-needs-list { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.ob2-needs-list { display: flex; flex-direction: column; gap: 8px; flex: 1; margin-bottom: 20px; }
+.ob2-need-other { width: 100%; padding: 11px 12px; border: 1px solid #ded9e2; border-radius: 8px; font-size: 13px; color: var(--ink); outline: 0; background: #fff; }
+.ob2-need-other:focus { border-color: var(--purple); box-shadow: 0 0 0 3px rgba(127,87,166,.12); }
 .ob2-need-btn { padding: 14px 18px; background: #fff; border: 1px solid #e6e0ea; border-radius: 10px; text-align: left; font-size: 14px; color: var(--ink); cursor: pointer; transition: all .15s; }
 .ob2-need-btn:hover { border-color: var(--purple); background: #faf8fc; }
 .ob2-need-btn.selected { color: var(--purple); background: #f8f3fb; border-color: var(--purple); font-weight: 600; }

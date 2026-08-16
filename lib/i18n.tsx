@@ -718,7 +718,7 @@ export type OnboardingT = {
   sectorMode: string; sectorBeaute: string; sectorRestauration: string; sectorEcommerce: string;
   sectorElectronique: string; sectorServices: string; sectorAutre: string;
   step3Title: string; step3Desc: string;
-  needs: string[];
+  needs: string[]; needOtherPlaceholder: string;
   step4Title: string; step4Desc: string; whatsappNumber: string; infoBoxText: string;
   step5Title: string; step5Desc: string;
   sourceFacebook: string; sourceWhatsapp: string; sourceWordOfMouth: string; sourceOther: string;
@@ -739,6 +739,7 @@ const onboardingFr: OnboardingT = {
   sectorElectronique: "Électronique", sectorServices: "Services", sectorAutre: "Autre",
   step3Title: "Ton besoin principal", step3Desc: "On configure l'IA en priorité pour ça.",
   needs: ["Service après-vente", "Prise de commande", "Relance clients", "Catalogue produits", "Autre"],
+  needOtherPlaceholder: "Précisez votre besoin",
   step4Title: "Numéro WhatsApp", step4Desc: "Le numéro que l'assistant va gérer.",
   whatsappNumber: "Numéro WhatsApp Business",
   infoBoxText: "Ce numéro sert à connecter l'assistant : il répond à vos clients, envoie le catalogue et enregistre les commandes. Vous gardez le contrôle total et pouvez le déconnecter à tout moment.",
@@ -761,6 +762,7 @@ const onboardingEn: OnboardingT = {
   sectorElectronique: "Electronics", sectorServices: "Services", sectorAutre: "Other",
   step3Title: "Your main need", step3Desc: "We'll configure the AI for this first.",
   needs: ["After-sales support", "Taking orders", "Customer follow-ups", "Product catalog", "Other"],
+  needOtherPlaceholder: "Specify your need",
   step4Title: "WhatsApp number", step4Desc: "The number the assistant will manage.",
   whatsappNumber: "WhatsApp Business number",
   infoBoxText: "This number is used to connect the assistant: it replies to your customers, sends the catalog, and records orders. You keep full control and can disconnect it at any time.",
