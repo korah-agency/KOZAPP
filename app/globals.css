@@ -585,9 +585,11 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
   .lp-pricing-preview-header { flex-direction: column; align-items: flex-start; }
   .lp-cta-inner { padding: 36px 24px; }
   .lp-cta-guarantees { flex-direction: column; align-items: center; gap: 8px; }
-  .lp-footer-top { flex-direction: column; }
-  .lp-footer-links { align-items: flex-start; }
-  .lp-footer-bottom { flex-direction: column; gap: 6px; text-align: center; }
+  .lp-footer { text-align: center; }
+  .lp-footer-top { flex-direction: column; align-items: center; gap: 24px; }
+  .lp-footer-brand { max-width: none; display: flex; flex-direction: column; align-items: center; }
+  .lp-footer-links { align-items: center; }
+  .lp-footer-bottom { flex-direction: column; gap: 8px; text-align: center; align-items: center; }
   .lp-payment-methods { flex-direction: column; align-items: center; gap: 8px; }
   .pricing2-cards { grid-template-columns: 1fr; }
   .pricing2-cards-section { transform: none; }
