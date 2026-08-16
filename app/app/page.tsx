@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useId, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle, ArrowRight, BarChart3, Bell, Bot, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard,
@@ -246,6 +246,95 @@ function Dashboard({ setView, profile }: { setView: (view: View) => void; profil
 }
 
 /* ─── Analytics ─── */
+function RevenueTrend({ data, title, subtitle }: { data: { date: string; order_count: number; total_revenue: number }[]; title: string; subtitle: string }) {
+  const { lang } = useLanguage();
+  const t = useDashboardT();
+  const gradId = useId();
+  const [tip, setTip] = useState<{ xPct: number; yPct: number; d: typeof data[number] } | null>(null);
+
+  if (data.length === 0) {
+    return (
+      <article className="panel" style={{ gridColumn: "span 2" }}>
+        <div className="panel-heading"><div><h2>{title}</h2><p>{subtitle}</p></div></div>
+        <p className="muted">{t.analytics.noData}</p>
+      </article>
+    );
+  }
+
+  const W = 900, H = 210, PAD_L = 55, PAD_R = 16, PAD_T = 8, PAD_B = 28;
+  const chartW = W - PAD_L - PAD_R;
+  const chartH = H - PAD_T - PAD_B;
+  const maxRev = Math.max(...data.map(d => d.total_revenue), 1);
+  const svgPts = data.map((d, i) => ({
+    x: data.length > 1 ? PAD_L + (i / (data.length - 1)) * chartW : PAD_L + chartW / 2,
+    y: PAD_T + chartH - (d.total_revenue / maxRev) * chartH,
+  }));
+  const pts = svgPts.map((sp, i) => ({
+    xPct: sp.x / W * 100,
+    yPct: sp.y / H * 100,
+    d: data[i],
+  }));
+  const linePath = svgPts.map((p, i) => `${i === 0 ? "M" : "L"}${p.x},${p.y}`).join(" ");
+  const areaPath = `${linePath} L${svgPts[svgPts.length - 1].x},${PAD_T + chartH} L${PAD_L},${PAD_T + chartH} Z`;
+  const yTicks = [0, 0.5, 1].map(f => ({
+    y: PAD_T + chartH - f * chartH,
+    label: fmtFcfa(maxRev * f, lang),
+  }));
+  const yTicksReversed = [...yTicks].reverse();
+  const lastPt = pts[pts.length - 1];
+  const lastSvgPt = svgPts[svgPts.length - 1];
+
+  return (
+    <article className="panel" style={{ gridColumn: "span 2" }}>
+      <div className="panel-heading"><div><h2>{title}</h2><p>{subtitle}</p></div></div>
+      <div className="revenue-trend">
+        <div className="chart-y" style={{ height: H }}>
+          {yTicksReversed.map((t, i) => <span key={i}>{t.label}</span>)}
+        </div>
+        <div className="chart-area" style={{ height: H }}>
+          <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" role="img" aria-label={title}>
+            <defs>
+              <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="var(--purple)" stopOpacity="0.12" />
+                <stop offset="100%" stopColor="var(--purple)" stopOpacity="0.01" />
+              </linearGradient>
+            </defs>
+            {yTicks.map((t, i) => <line key={i} x1={PAD_L} y1={t.y} x2={W - PAD_R} y2={t.y} stroke="#ece8ef" strokeWidth="1" />)}
+            <path d={areaPath} fill={`url(#${gradId})`} />
+            <path d={linePath} className="trend-line" />
+            {lastSvgPt && <circle cx={lastSvgPt.x} cy={lastSvgPt.y} r="5" fill="var(--purple)" stroke="white" strokeWidth="2" />}
+          </svg>
+          {pts.map((p, i) => (
+            <div key={i} tabIndex={0} role="button"
+              aria-label={`${p.d.date}: ${fmtFcfa(p.d.total_revenue, lang)} FCFA, ${p.d.order_count} ${t.orders.summaryCount}`}
+              style={{ position: "absolute", left: `calc(${p.xPct}% - 14px)`, top: `calc(${p.yPct}% - 14px)`, width: 28, height: 28, cursor: "pointer", outline: "none" }}
+              onMouseEnter={() => setTip(p)}
+              onMouseLeave={() => setTip(null)}
+              onFocus={() => setTip(p)}
+              onBlur={() => setTip(null)} />
+          ))}
+          {tip && (
+            <div style={{ position: "absolute", left: `calc(${tip.xPct}% - 48px)`, top: `calc(${tip.yPct}% - 52px)`, background: "#4d3c5d", color: "#fff", padding: "5px 9px", borderRadius: 6, fontSize: 9, textAlign: "center", pointerEvents: "none", whiteSpace: "nowrap", zIndex: 2 }}>
+              {tip.d.date}<br />{fmtFcfa(tip.d.total_revenue, lang)} FCFA<br />{tip.d.order_count} {t.orders.summaryCount}
+            </div>
+          )}
+          {lastPt && (
+            <div style={{ position: "absolute", left: `calc(${lastPt.xPct}% - 42px)`, top: `calc(${lastPt.yPct}% - 38px)`, color: "var(--purple)", fontWeight: 700, fontSize: 10, pointerEvents: "none", textAlign: "center", whiteSpace: "nowrap" }}>
+              {fmtFcfa(lastPt.d.total_revenue, lang)}
+            </div>
+          )}
+          <div style={{ position: "absolute", inset: "auto 0 -20px", display: "flex", justifyContent: "space-between", color: "#9b95a3", fontSize: 9, paddingLeft: `${PAD_L / W * 100}%`, paddingRight: `${PAD_R / W * 100}%` }}>
+            {data.length <= 7
+              ? data.map(d => <span key={d.date}>{d.date.slice(5)}</span>)
+              : data.filter((_, i) => i % Math.ceil(data.length / 7) === 0 || i === data.length - 1).map(d => <span key={d.date}>{d.date.slice(5)}</span>)
+            }
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function Analytics() {
   const { lang } = useLanguage();
   const t = useDashboardT();
@@ -289,6 +378,9 @@ function Analytics() {
 
       {status === "ready" && insights && (
         <div className="analytics-grid">
+          {/* 0. Revenue trend */}
+          <RevenueTrend data={insights.daily_sales} title={t.analytics.revenueTrendTitle} subtitle={t.analytics.revenueTrendSubtitle} />
+
           {/* 1. Geo breakdown */}
           <article className="panel">
             <div className="panel-heading"><div><h2>{t.analytics.geoTitle}</h2><p>{t.analytics.geoSubtitle}</p></div></div>
@@ -297,13 +389,19 @@ function Analytics() {
             ) : (
               (() => {
                 const maxCount = Math.max(...insights.geo_breakdown.map(g => g.order_count), 1);
-                return insights.geo_breakdown.map(g => (
-                  <div className="zone-row" key={g.neighborhood}>
-                    <div><strong>{g.neighborhood}</strong><small>{fmtFcfa(g.total_revenue, lang)} FCFA</small></div>
-                    <div className="mini-progress"><span style={{ width: `${(g.order_count / maxCount) * 100}%` }} /></div>
-                    <span>{g.order_count}</span>
+                return (
+                  <div className="geo-bars">
+                    {insights.geo_breakdown.map(g => (
+                      <div className="geo-bar-row" key={g.neighborhood}>
+                        <span className="geo-label">{g.neighborhood}</span>
+                        <div className="geo-bar-track">
+                          <div className="geo-bar-fill" style={{ width: `${(g.order_count / maxCount) * 100}%` }} title={`${g.neighborhood}: ${g.order_count} ${t.orders.summaryCount} · ${fmtFcfa(g.total_revenue, lang)} FCFA`} />
+                        </div>
+                        <span className="geo-count">{g.order_count}</span>
+                      </div>
+                    ))}
                   </div>
-                ));
+                );
               })()
             )}
           </article>

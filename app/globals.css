@@ -110,10 +110,23 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .zone-row .mini-progress { flex:1; height:6px; border-radius:99px; background:#ece8f0; overflow:hidden; }
 .zone-row .mini-progress span { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--purple),#aa82cf); }
 .zone-row>span:last-child { color:var(--muted); font-size:11px; font-weight:600; min-width:24px; text-align:right; }
+.geo-bars { display:flex; flex-direction:column; gap:2px; }
+.geo-bar-row { display:flex; align-items:center; gap:10px; }
+.geo-bar-row .geo-label { flex:none; min-width:90px; max-width:120px; font-size:11px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.geo-bar-track { flex:1; height:24px; background:#ece8f0; border-radius:0 4px 4px 0; overflow:hidden; position:relative; }
+.geo-bar-fill { height:100%; background:var(--purple); border-radius:0 4px 4px 0; transition:width .4s; min-width:2px; }
+.geo-bar-fill:hover { background:var(--purple-dark); }
+.geo-bar-row .geo-count { flex:none; min-width:28px; font-size:11px; font-weight:600; color:var(--muted); text-align:right; }
+.revenue-trend { height:240px; display:flex; gap:10px; }
+.revenue-trend .chart-y { height:210px; padding-top:3px; display:flex; flex-direction:column; justify-content:space-between; color:#a29ba9; font-size:9px; }
+.revenue-trend .chart-area { min-width:0; flex:1; height:210px; position:relative; }
+.revenue-trend .chart-area svg { position:absolute; inset:0; width:100%; height:100%; overflow:visible; }
+.revenue-trend .trend-line { fill:none; stroke:var(--purple); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+
 /* .impact-card est deja entierement stylee par les regles partagees
    .quota-large,.impact-card (voir plus haut) -- pas de redefinition ici. */
 @media (max-width:880px) { .analytics-grid { grid-template-columns:1fr; } .analytics-grid .panel[style*="grid-column:span 2"] { grid-column:span 1; } }
-@media (max-width:620px) { .analytics-grid { gap:12px; } .hour-bars { height:90px; gap:2px; } }
+@media (max-width:620px) { .analytics-grid { gap:12px; } .hour-bars { height:90px; gap:2px; } .geo-bar-row .geo-label { min-width:70px; max-width:90px; font-size:10px; } .revenue-trend { height:200px; } .revenue-trend .chart-y, .revenue-trend .chart-area { height:180px; } }
 
 /* ================================================================
    SETTINGS — Équipe / Compte tabs

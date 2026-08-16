@@ -267,6 +267,7 @@ export type AnalyticsSummary = {
 };
 
 export type AnalyticsInsights = {
+  daily_sales: { date: string; order_count: number; total_revenue: number }[];
   geo_breakdown: { neighborhood: string; order_count: number; total_revenue: number }[];
   conversion: {
     total_conversations: number;
