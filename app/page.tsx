@@ -432,6 +432,24 @@ function ProblemSolution() {
 }
 
 /* ─── Bloc 5 : Fonctionnalités transformées en bénéfices ─── */
+function BenefitCard({ icon, b }: { icon: React.ReactNode; b: { title: string; desc: string; stat: string; statLabel: string } }) {
+  return (
+    <div className="lp-benefit-card-h">
+      <span className="lp-benefit-icon">{icon}</span>
+      <div className="lp-benefit-body">
+        <div className="lp-benefit-top">
+          <h4>{b.title}</h4>
+          <div className="lp-benefit-stat">
+            <strong>{b.stat}</strong>
+            <span>{b.statLabel}</span>
+          </div>
+        </div>
+        <p>{b.desc}</p>
+      </div>
+    </div>
+  );
+}
+
 function BenefitsSection() {
   const { t } = useT();
   const { ref, visible } = useInView(0.1);
@@ -447,33 +465,13 @@ function BenefitsSection() {
           <div className={`lp-benefits-column lp-reveal ${visible ? "lp-visible" : ""}`}>
             <h3><MessageCircle size={18} /> {t.benefits.agentTitle}</h3>
             {t.benefits.agent.map((b, i) => (
-              <div key={i} className="lp-benefit-card-h">
-                <span className="lp-benefit-icon">{agentIcons[i]}</span>
-                <div className="lp-benefit-text">
-                  <h4>{b.title}</h4>
-                  <p>{b.desc}</p>
-                </div>
-                <div className="lp-benefit-stat">
-                  <strong>{b.stat}</strong>
-                  <span>{b.statLabel}</span>
-                </div>
-              </div>
+              <BenefitCard key={i} icon={agentIcons[i]} b={b} />
             ))}
           </div>
           <div className={`lp-benefits-column lp-reveal ${visible ? "lp-visible" : ""}`} style={{ transitionDelay: ".15s" }}>
             <h3><BarChart3 size={18} /> {t.benefits.gestionTitle}</h3>
             {t.benefits.gestion.map((b, i) => (
-              <div key={i} className="lp-benefit-card-h">
-                <span className="lp-benefit-icon">{gestionIcons[i]}</span>
-                <div className="lp-benefit-text">
-                  <h4>{b.title}</h4>
-                  <p>{b.desc}</p>
-                </div>
-                <div className="lp-benefit-stat">
-                  <strong>{b.stat}</strong>
-                  <span>{b.statLabel}</span>
-                </div>
-              </div>
+              <BenefitCard key={i} icon={gestionIcons[i]} b={b} />
             ))}
           </div>
         </div>

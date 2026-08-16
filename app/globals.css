@@ -284,10 +284,11 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .lp-benefit-card-h { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--line-soft); border-radius: 14px; background: #fff; margin-bottom: 12px; transition: box-shadow .2s, border-color .2s; }
 .lp-benefit-card-h:hover { box-shadow: var(--shadow); border-color: #e0d8ea; }
 .lp-benefit-card-h .lp-benefit-icon { margin-bottom: 0; }
-.lp-benefit-card-h .lp-benefit-text { flex: 1; }
-.lp-benefit-card-h .lp-benefit-text h4 { margin: 0 0 4px; font: 700 14px var(--font-syne), sans-serif; color: var(--ink); }
-.lp-benefit-card-h .lp-benefit-text p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.lp-benefit-card-h .lp-benefit-stat { text-align: right; flex-shrink: 0; }
+.lp-benefit-body { flex: 1; min-width: 0; }
+.lp-benefit-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lp-benefit-top h4 { margin: 0; font: 700 14px var(--font-syne), sans-serif; color: var(--ink); }
+.lp-benefit-body > p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.lp-benefit-card-h .lp-benefit-stat { text-align: right; flex-shrink: 0; margin-bottom: 0; }
 .lp-benefit-card-h .lp-benefit-stat strong { font: 700 20px var(--font-syne), sans-serif; color: var(--purple); letter-spacing: -.03em; display: block; }
 .lp-benefit-card-h .lp-benefit-stat span { font-size: 11px; color: var(--muted); }
 .lp-benefit-stat { display: flex; align-items: baseline; gap: 5px; margin-bottom: 8px; }
