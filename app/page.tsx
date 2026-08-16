@@ -296,7 +296,7 @@ function Navbar() {
 
 /* ─── Bloc 2 : Hero — résultat concret + vrai produit ─── */
 function Hero() {
-  const { t } = useT();
+  const { lang, t } = useT();
   const [chatStep, setChatStep] = useState(0);
   const [paused, setPaused] = useState(false);
   const { ref: viewportRef, visible: inViewport } = useInView(0.2, false);
@@ -321,7 +321,7 @@ function Hero() {
       <div className="lp-hero-gradient" />
       <div className="lp-hero-content">
         <div className="lp-hero-text">
-          <h1 style={{ whiteSpace: "pre-line" }}>{t.hero.h1}</h1>
+          <h1 className={lang === "en" ? "lp-h1-en" : undefined} style={{ whiteSpace: "pre-line" }}>{t.hero.h1}</h1>
           <p>{t.hero.p}</p>
           <div className="lp-hero-ctas">
             <Link href="/auth?mode=register" className="lp-btn-primary lp-btn-lg">{t.hero.ctaPrimary} <ArrowRight size={18} /></Link>
