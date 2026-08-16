@@ -46,7 +46,7 @@ export function localeFor(lang: Lang): string {
 export type DashboardT = {
   loadingApp: string;
   sidebar: { helpCenter: string; korahSolution: string; logout: string; connected: string; notConnected: string };
-  menu: { dashboard: string; orders: string; catalog: string; followups: string; agent: string; billing: string; settings: string };
+  menu: { dashboard: string; analytics: string; orders: string; catalog: string; followups: string; agent: string; billing: string; settings: string };
   bottomNav: { home: string; more: string };
   topbar: {
     whatsappConnected: string; whatsappNotConnected: string; notifications: string; noNotifications: string;
@@ -136,6 +136,25 @@ export type DashboardT = {
     title: string; desc: string; password: string; passwordDesc: string; change: string;
     emailNotif: string; emailNotifDesc: string; closeAccount: string; closeAccountDesc: string;
   };
+  analytics: {
+    eyebrow: string; title: string; subtitle: string;
+    loading: string; error: string;
+    geoTitle: string; geoSubtitle: string;
+    conversionTitle: string; conversionSubtitle: string;
+    peakHoursTitle: string; peakHoursSubtitle: string;
+    followupsTitle: string; followupsSubtitle: string;
+    negotiationTitle: string; negotiationSubtitle: string;
+    leakingTitle: string; leakingSubtitle: string; leakingSince: string;
+    segmentsTitle: string; segmentsSubtitle: string;
+    quotaTitle: string; quotaSubtitle: string;
+    converted: string; inProgress: string; lost: string; escalated: string;
+    sent: string; responded: string; recoveredAmount: string;
+    negotiatedShare: string; avgDiscount: string; totalDiscount: string;
+    newCustomers: string; returningClients: string; repeatRate: string;
+    conversationsUsed: string; followupsUsed: string;
+    highUsageWarning: string;
+    noData: string;
+  };
   confirmClose: { title: string; text: string; cancel: string; confirm: string };
   changePasswordModal: {
     title: string; desc: string; current: string; newPassword: string; confirmNew: string;
@@ -151,7 +170,7 @@ const dashboardFr: DashboardT = {
     connected: "connecté", notConnected: "non connecté",
   },
   menu: {
-    dashboard: "Tableau de bord", orders: "Commandes", catalog: "Catalogue", followups: "Relances",
+    dashboard: "Tableau de bord", analytics: "Analytics", orders: "Commandes", catalog: "Catalogue", followups: "Relances",
     agent: "Mon agent", billing: "Facturation", settings: "Paramètres",
   },
   bottomNav: { home: "Accueil", more: "Plus" },
@@ -293,6 +312,25 @@ const dashboardFr: DashboardT = {
     closeAccount: "Fermer mon compte",
     closeAccountDesc: "Cette action supprime définitivement les données de votre boutique.",
   },
+  analytics: {
+    eyebrow: "Vue approfondie", title: "Analytics", subtitle: "Comprenez votre activité en profondeur pour vendre encore mieux.",
+    loading: "Chargement de vos analytics…", error: "Impossible de charger les analytics.",
+    geoTitle: "Répartition géographique", geoSubtitle: "D'où viennent vos commandes",
+    conversionTitle: "Taux de conversion", conversionSubtitle: "Conversations transformées en commandes",
+    peakHoursTitle: "Heures de forte activité", peakHoursSubtitle: "Quand vos clients vous contactent",
+    followupsTitle: "Efficacité des relances", followupsSubtitle: "Messages envoyés vs commandes récupérées",
+    negotiationTitle: "Impact de la négociation", negotiationSubtitle: "Votre agent maîtrise-t-il les prix ?",
+    leakingTitle: "Ventes en train de fuir", leakingSubtitle: "Conversations stagnantes depuis 24h+", leakingSince: "depuis",
+    segmentsTitle: "Clients nouveaux vs récurrents", segmentsSubtitle: "Fidélité de votre clientèle",
+    quotaTitle: "Consommation du palier", quotaSubtitle: "Conversations et relances utilisées ce mois",
+    converted: "Converti", inProgress: "En cours", lost: "Perdu", escalated: "Escaladé",
+    sent: "Envoyées", responded: "Répondues", recoveredAmount: "Montant récupéré",
+    negotiatedShare: "Part négociée", avgDiscount: "Remise moyenne", totalDiscount: "Total remises",
+    newCustomers: "Nouveaux clients", returningClients: "Clients récurrents", repeatRate: "Taux de réachat",
+    conversationsUsed: "Conversations", followupsUsed: "Relances",
+    highUsageWarning: "Palier bientôt atteint",
+    noData: "Pas encore de données pour cette période.",
+  },
   confirmClose: {
     title: "Fermer définitivement votre compte ?",
     text: "Cette action supprime toutes les données de votre boutique — commandes, catalogue, conversations. Elle est irréversible.",
@@ -317,7 +355,7 @@ const dashboardEn: DashboardT = {
     connected: "connected", notConnected: "not connected",
   },
   menu: {
-    dashboard: "Dashboard", orders: "Orders", catalog: "Catalog", followups: "Follow-ups",
+    dashboard: "Dashboard", analytics: "Analytics", orders: "Orders", catalog: "Catalog", followups: "Follow-ups",
     agent: "My agent", billing: "Billing", settings: "Settings",
   },
   bottomNav: { home: "Home", more: "More" },
@@ -458,6 +496,25 @@ const dashboardEn: DashboardT = {
     emailNotif: "Email notifications", emailNotifDesc: "New orders, quotas, invoices",
     closeAccount: "Close my account",
     closeAccountDesc: "This action permanently deletes your shop's data.",
+  },
+  analytics: {
+    eyebrow: "Deep dive", title: "Analytics", subtitle: "Understand your activity in depth to sell even better.",
+    loading: "Loading your analytics…", error: "Couldn't load analytics.",
+    geoTitle: "Geographic breakdown", geoSubtitle: "Where your orders come from",
+    conversionTitle: "Conversion rate", conversionSubtitle: "Conversations turned into orders",
+    peakHoursTitle: "Peak hours", peakHoursSubtitle: "When your customers reach out",
+    followupsTitle: "Follow-up performance", followupsSubtitle: "Messages sent vs orders recovered",
+    negotiationTitle: "Negotiation impact", negotiationSubtitle: "Does your agent hold the line on prices?",
+    leakingTitle: "Leaking sales", leakingSubtitle: "Conversations stuck for 24h+", leakingSince: "since",
+    segmentsTitle: "New vs returning customers", segmentsSubtitle: "Customer loyalty",
+    quotaTitle: "Plan usage", quotaSubtitle: "Conversations and follow-ups used this month",
+    converted: "Converted", inProgress: "In progress", lost: "Lost", escalated: "Escalated",
+    sent: "Sent", responded: "Responded", recoveredAmount: "Recovered amount",
+    negotiatedShare: "Negotiated share", avgDiscount: "Avg discount", totalDiscount: "Total discounts",
+    newCustomers: "New customers", returningClients: "Returning customers", repeatRate: "Repeat rate",
+    conversationsUsed: "Conversations", followupsUsed: "Follow-ups",
+    highUsageWarning: "Plan limit approaching",
+    noData: "No data for this period yet.",
   },
   confirmClose: {
     title: "Permanently close your account?",

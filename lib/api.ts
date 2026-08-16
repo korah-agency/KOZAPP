@@ -246,6 +246,16 @@ export function updateOrderStatus(id: string, body: { status: string; note?: str
 }
 
 /* ─── Analytics ─── */
+export type QuotaUsage = {
+  plan: string;
+  conversations_used: number;
+  conversations_limit: number;
+  followups_used: number;
+  followups_limit: number;
+  period_start: string;
+  period_end: string;
+};
+
 export type AnalyticsSummary = {
   total_orders: number;
   total_revenue: number;
@@ -253,11 +263,62 @@ export type AnalyticsSummary = {
   average_order_value: number;
   daily_sales: { date: string; order_count: number; total_revenue: number }[];
   top_products: { product_id: string; product_name: string; total_quantity: number; total_revenue: number }[];
+  quota: QuotaUsage;
+};
+
+export type AnalyticsInsights = {
+  geo_breakdown: { neighborhood: string; order_count: number; total_revenue: number }[];
+  conversion: {
+    total_conversations: number;
+    converted: number;
+    lost: number;
+    in_progress: number;
+    escalated: number;
+    conversion_rate: number;
+  };
+  peak_hours: { hour: number; order_count: number }[];
+  followups: {
+    sent: number;
+    responded: number;
+    converted: number;
+    recovered_amount: number;
+    response_rate: number;
+    conversion_rate: number;
+  };
+  negotiation: {
+    negotiated_orders: number;
+    total_orders: number;
+    negotiated_share: number;
+    average_discount_pct: number;
+    total_discount_amount: number;
+  };
+  leaking_sales: {
+    count: number;
+    estimated_amount: number;
+    items: {
+      customer_name: string;
+      whatsapp_phone: string;
+      outcome: string;
+      last_message_at: string | null;
+      estimated_amount: number | null;
+    }[];
+  };
+  segments: {
+    new_customers: number;
+    returning_customers: number;
+    repeat_rate: number;
+  };
+  quota: QuotaUsage;
 };
 
 export function getAnalyticsSummary(days?: number) {
   const suffix = days ? `?days=${days}` : "";
   return apiFetch<AnalyticsSummary>(`/api/analytics/summary${suffix}`);
+}
+
+export function getAnalyticsInsights(days?: number) {
+  const suffix = days ? `?days=${days}` : "";
+  return apiFetch<AnalyticsInsights>(`/api/analytics/insights${suffix}`);
 }
 
 /* ─── Negotiation rules ─── */

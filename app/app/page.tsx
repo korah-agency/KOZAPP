@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  AlertTriangle, ArrowRight, Bell, Bot, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard,
+  AlertTriangle, ArrowRight, BarChart3, Bell, Bot, Check, ChevronDown, ChevronRight, CircleHelp, CreditCard,
   Eye, EyeOff, FileText, Globe2, Home, ImagePlus, LayoutDashboard, LogOut, Menu, MessageCircle, MoreHorizontal,
   Package, Plus, Search, Send, Settings, ShieldCheck, ShoppingBag, SlidersHorizontal,
   Sparkles, Users, WalletCards, X, Zap,
@@ -12,14 +12,14 @@ import { KORAH_WEBSITE_URL } from "@/lib/social-proof";
 import PhoneInput from "@/components/PhoneInput";
 import {
   ApiError, CategoryRead, NegotiationRuleRead, OrderRead, ProductRead, ProfileRead, TeamMemberRead,
-  changePassword, clearToken, createProduct, getAnalyticsSummary, getToken, inviteTeamMember, listCategories,
+  changePassword, clearToken, createProduct, getAnalyticsInsights, getAnalyticsSummary, getToken, inviteTeamMember, listCategories,
   listNegotiationRules, listOrders, listProducts, listTeam, me, resolveImageUrl, updateOrderStatus,
   updateProduct, updateProfile, uploadProductImage, upsertNegotiationRule, PASSWORD_HINT, PASSWORD_PATTERN,
 } from "@/lib/api";
 import { LanguageProvider, useLanguage, useDashboardT, tFormat, localeFor, type Lang, type DashboardT } from "@/lib/i18n";
 
-type View = "dashboard" | "orders" | "catalog" | "followups" | "agent" | "billing" | "settings";
-const VIEWS: View[] = ["dashboard", "orders", "catalog", "followups", "agent", "billing", "settings"];
+type View = "dashboard" | "analytics" | "orders" | "catalog" | "followups" | "agent" | "billing" | "settings";
+const VIEWS: View[] = ["dashboard", "analytics", "orders", "catalog", "followups", "agent", "billing", "settings"];
 
 const TONES = ["burger", "chicken", "fries", "bissap"];
 const toneFor = (i: number) => TONES[i % TONES.length];
@@ -27,6 +27,7 @@ const toneFor = (i: number) => TONES[i % TONES.length];
 function useMenu(t: DashboardT): { id: View; label: string; icon: typeof LayoutDashboard; alert?: boolean }[] {
   return [
     { id: "dashboard", label: t.menu.dashboard, icon: LayoutDashboard },
+    { id: "analytics", label: t.menu.analytics, icon: BarChart3 },
     { id: "orders", label: t.menu.orders, icon: ShoppingBag, alert: true },
     { id: "catalog", label: t.menu.catalog, icon: Package },
     { id: "followups", label: t.menu.followups, icon: Send },
@@ -191,9 +192,10 @@ function Dashboard({ setView, profile }: { setView: (view: View) => void; profil
             <article className="metric-card quota-card">
               <span className="metric-icon orange"><MessageCircle size={19} /></span>
               <div className="quota-top">
-                <p>{t.dashboard.conversations}</p><strong>— <small>{t.dashboard.perTier}</small></strong>
-                <div className="progress"><span style={{ width: "0%" }} /></div>
-                <small>{t.dashboard.quotaHint}</small>
+                <p>{t.dashboard.conversations}</p>
+                <strong>{summary.quota.conversations_used} <small>/ {summary.quota.conversations_limit}</small></strong>
+                <div className="progress"><span style={{ width: `${summary.quota.conversations_limit > 0 ? Math.min((summary.quota.conversations_used / summary.quota.conversations_limit) * 100, 100) : 0}%` }} /></div>
+                <small>{summary.quota.period_start} — {summary.quota.period_end}</small>
               </div>
             </article>
           </section>
@@ -238,6 +240,213 @@ function Dashboard({ setView, profile }: { setView: (view: View) => void; profil
             </section>
           )}
         </>
+      )}
+    </>
+  );
+}
+
+/* ─── Analytics ─── */
+function Analytics() {
+  const { lang } = useLanguage();
+  const t = useDashboardT();
+  const periodOptions = [
+    { key: "today", label: t.dashboard.periodToday, days: 1 as number | undefined },
+    { key: "last7", label: t.dashboard.periodLast7, days: 7 },
+    { key: "month", label: t.dashboard.periodThisMonth, days: 30 },
+    { key: "all", label: t.dashboard.periodAllTime, days: undefined },
+  ];
+  const [insights, setInsights] = useState<Awaited<ReturnType<typeof getAnalyticsInsights>> | null>(null);
+  const [status, setStatus] = useState<"loading" | "error" | "ready">("loading");
+  const [periodKey, setPeriodKey] = useState("month");
+  const period = periodOptions.find(p => p.key === periodKey) ?? periodOptions[2];
+
+  const load = () => {
+    setStatus("loading");
+    getAnalyticsInsights(period.days)
+      .then(i => { setInsights(i); setStatus("ready"); })
+      .catch(() => setStatus("error"));
+  };
+  useEffect(load, [period.days]);
+
+  const fmtH = (h: number) => {
+    const wat = (h + 1) % 24;
+    return `${String(wat).padStart(2, "0")}h`;
+  };
+
+  return (
+    <>
+      <div className="page-heading">
+        <div><p className="eyebrow">{t.analytics.eyebrow}</p><h1>{t.analytics.title} <BarChart3 size={24} /></h1><p className="muted">{t.analytics.subtitle}</p></div>
+        <Dropdown triggerClassName="filter-button" trigger={<><SlidersHorizontal size={17} /> {period.label} <ChevronDown size={16} /></>}>
+          {periodOptions.map(opt => (
+            <button key={opt.key} type="button" className={`dropdown-item ${opt.key === period.key ? "active" : ""}`} onClick={() => setPeriodKey(opt.key)}>{opt.label}</button>
+          ))}
+        </Dropdown>
+      </div>
+
+      {status === "loading" && <LoadingState label={t.analytics.loading} />}
+      {status === "error" && <ErrorState message={t.analytics.error} onRetry={load} />}
+
+      {status === "ready" && insights && (
+        <div className="analytics-grid">
+          {/* 1. Geo breakdown */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.geoTitle}</h2><p>{t.analytics.geoSubtitle}</p></div></div>
+            {insights.geo_breakdown.length === 0 ? (
+              <p className="muted">{t.analytics.noData}</p>
+            ) : (
+              (() => {
+                const maxCount = Math.max(...insights.geo_breakdown.map(g => g.order_count), 1);
+                return insights.geo_breakdown.map(g => (
+                  <div className="zone-row" key={g.neighborhood}>
+                    <div><strong>{g.neighborhood}</strong><small>{fmtFcfa(g.total_revenue, lang)} FCFA</small></div>
+                    <div className="mini-progress"><span style={{ width: `${(g.order_count / maxCount) * 100}%` }} /></div>
+                    <span>{g.order_count}</span>
+                  </div>
+                ));
+              })()
+            )}
+          </article>
+
+          {/* 2. Conversion */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.conversionTitle}</h2><p>{t.analytics.conversionSubtitle}</p></div></div>
+            <div className="metric-card" style={{ minHeight: 90, marginBottom: 16 }}>
+              <span className="metric-icon green"><Check size={19} /></span>
+              <div><p>{t.dashboard.conversations}</p><strong>{insights.conversion.conversion_rate}%</strong><small>{insights.conversion.total_conversations} {t.dashboard.conversations.toLowerCase()}</small></div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <Badge tone="purple">{t.analytics.converted}: {insights.conversion.converted}</Badge>
+              <Badge tone="orange">{t.analytics.inProgress}: {insights.conversion.in_progress}</Badge>
+              <Badge tone="red">{t.analytics.lost}: {insights.conversion.lost}</Badge>
+              <Badge tone="pink">{t.analytics.escalated}: {insights.conversion.escalated}</Badge>
+            </div>
+          </article>
+
+          {/* 3. Peak hours */}
+          <article className="panel" style={{ gridColumn: "span 2" }}>
+            <div className="panel-heading"><div><h2>{t.analytics.peakHoursTitle}</h2><p>{t.analytics.peakHoursSubtitle}</p></div></div>
+            {insights.peak_hours.every(h => h.order_count === 0) ? (
+              <p className="muted">{t.analytics.noData}</p>
+            ) : (
+              <div className="hour-bars">
+                {insights.peak_hours.map(h => {
+                  const maxP = Math.max(...insights.peak_hours.map(x => x.order_count), 1);
+                  const pct = (h.order_count / maxP) * 100;
+                  return (
+                    <div className="hour-bar-col" key={h.hour}>
+                      <div className="hour-bar" style={{ height: `${Math.max(pct, 2)}%` }} title={`${fmtH(h.hour)}: ${h.order_count}`} />
+                      {h.hour % 4 === 0 && <span className="hour-label">{fmtH(h.hour)}</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </article>
+
+          {/* 4. Followups */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.followupsTitle}</h2><p>{t.analytics.followupsSubtitle}</p></div></div>
+            {insights.followups.sent === 0 ? (
+              <p className="muted">{t.analytics.noData}</p>
+            ) : (
+              <>
+                <div className="usage-grid">
+                  <article className="usage-card"><p>{t.analytics.sent}</p><strong>{insights.followups.sent}</strong></article>
+                  <article className="usage-card"><p>{t.analytics.responded}</p><strong>{insights.followups.response_rate}%</strong></article>
+                  <article className="usage-card"><p>{t.analytics.converted}</p><strong>{insights.followups.conversion_rate}%</strong></article>
+                </div>
+                {insights.followups.recovered_amount > 0 && (
+                  <div className="metric-card" style={{ minHeight: 80 }}>
+                    <span className="metric-icon green"><WalletCards size={19} /></span>
+                    <div><p>{t.analytics.recoveredAmount}</p><strong>{fmtFcfa(insights.followups.recovered_amount, lang)} <small>FCFA</small></strong></div>
+                  </div>
+                )}
+              </>
+            )}
+          </article>
+
+          {/* 5. Negotiation */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.negotiationTitle}</h2><p>{t.analytics.negotiationSubtitle}</p></div></div>
+            {insights.negotiation.total_orders === 0 ? (
+              <p className="muted">{t.analytics.noData}</p>
+            ) : (
+              <div className="impact-card">
+                <span className="soft-icon pink"><WalletCards size={19} /></span>
+                <div>
+                  <strong>{insights.negotiation.negotiated_share}%</strong>
+                  <p>{t.analytics.negotiatedShare} ({insights.negotiation.negotiated_orders}/{insights.negotiation.total_orders})</p>
+                  <small>{t.analytics.avgDiscount}: {insights.negotiation.average_discount_pct}% · {t.analytics.totalDiscount}: {fmtFcfa(insights.negotiation.total_discount_amount, lang)} FCFA</small>
+                </div>
+              </div>
+            )}
+          </article>
+
+          {/* 6. Leaking sales */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.leakingTitle}</h2><p>{t.analytics.leakingSubtitle}</p></div></div>
+            <div className="metric-card" style={{ minHeight: 90, marginBottom: 12 }}>
+              <span className="metric-icon orange"><AlertTriangle size={19} /></span>
+              <div><p>{insights.leaking_sales.count}</p><strong>{fmtFcfa(insights.leaking_sales.estimated_amount, lang)} <small>FCFA</small></strong></div>
+            </div>
+            {insights.leaking_sales.items.length === 0 ? (
+              <p className="muted">{t.analytics.noData}</p>
+            ) : (
+              insights.leaking_sales.items.map((item, i) => {
+                const hoursAgo = item.last_message_at
+                  ? Math.round((Date.now() - new Date(item.last_message_at).getTime()) / 3600000)
+                  : null;
+                return (
+                  <button className="attention-item" key={i}>
+                    <span className="attention-icon purple"><Users size={18} /></span>
+                    <span>
+                      <strong>{item.customer_name}</strong>
+                      <small>{t.analytics.leakingSince} {hoursAgo !== null ? `${hoursAgo}h` : "—"}</small>
+                    </span>
+                    {item.estimated_amount != null && <em>{fmtFcfa(item.estimated_amount, lang)} <small>FCFA</small></em>}
+                  </button>
+                );
+              })
+            )}
+          </article>
+
+          {/* 7. Segments */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.segmentsTitle}</h2><p>{t.analytics.segmentsSubtitle}</p></div></div>
+            <div className="usage-grid">
+              <article className="usage-card"><p>{t.analytics.newCustomers}</p><strong>{insights.segments.new_customers}</strong></article>
+              <article className="usage-card"><p>{t.analytics.returningClients}</p><strong>{insights.segments.returning_customers}</strong></article>
+              <article className="usage-card"><p>{t.analytics.repeatRate}</p><strong>{insights.segments.repeat_rate}%</strong></article>
+            </div>
+          </article>
+
+          {/* 8. Quota */}
+          <article className="panel">
+            <div className="panel-heading"><div><h2>{t.analytics.quotaTitle}</h2><p>{t.analytics.quotaSubtitle}</p></div></div>
+            <div className="quota-large">
+              <div>
+                <span className="soft-icon orange"><MessageCircle size={19} /></span>
+                <div>
+                  <p>{t.analytics.conversationsUsed}</p>
+                  <strong>{insights.quota.conversations_used} <small>/ {insights.quota.conversations_limit}</small></strong>
+                </div>
+              </div>
+              <div className="progress"><span style={{ width: `${insights.quota.conversations_limit > 0 ? Math.min((insights.quota.conversations_used / insights.quota.conversations_limit) * 100, 100) : 0}%` }} /></div>
+              <small>{insights.quota.period_start} — {insights.quota.period_end}</small>
+            </div>
+            <div className="quota-large" style={{ marginTop: 14 }}>
+              <div>
+                <span className="soft-icon pink"><Send size={19} /></span>
+                <div>
+                  <p>{t.analytics.followupsUsed}</p>
+                  <strong>{insights.quota.followups_used} <small>/ {insights.quota.followups_limit}</small></strong>
+                </div>
+              </div>
+              <div className="progress"><span style={{ width: `${insights.quota.followups_limit > 0 ? Math.min((insights.quota.followups_used / insights.quota.followups_limit) * 100, 100) : 0}%` }} /></div>
+            </div>
+          </article>
+        </div>
       )}
     </>
   );
@@ -1160,6 +1369,8 @@ function AppContent() {
     switch (view) {
       case "dashboard":
         return <Dashboard setView={setView} profile={profile} />;
+      case "analytics":
+        return <Analytics />;
       case "orders":
         return <Orders onOpenDetail={setOrderDetail} refreshKey={ordersRefreshKey} />;
       case "catalog":
