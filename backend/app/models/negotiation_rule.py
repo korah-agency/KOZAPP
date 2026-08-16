@@ -17,9 +17,11 @@ class NegotiationRule(Base):
     profile_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("profiles.id", ondelete="CASCADE"), index=True
     )
-    product_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), unique=True
+    product_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE")
     )
+    """NULL = regle par defaut de la boutique (au plus une par profil, voir
+    l'index unique partiel uq_negotiation_rules_profile_default)."""
     is_negotiable: Mapped[bool] = mapped_column(Boolean, default=False)
     floor_price: Mapped[float] = mapped_column(Numeric(10, 2), nullable=False)
     max_discount_pct: Mapped[float] = mapped_column(Numeric(5, 2), default=0)

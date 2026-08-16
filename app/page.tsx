@@ -287,7 +287,7 @@ function Navbar() {
             <button type="button" className={lang === "fr" ? "lp-lang-active" : ""} aria-current={lang === "fr"} onClick={() => setLang("fr")}>FR</button>
             <button type="button" className={lang === "en" ? "lp-lang-active" : ""} aria-current={lang === "en"} onClick={() => setLang("en")}>EN</button>
           </div>
-          <Link href="/auth" className="lp-btn-primary lp-btn-sm">{t.nav.cta}</Link>
+          <Link href="/auth?mode=register" className="lp-btn-primary lp-btn-sm">{t.nav.cta}</Link>
         </div>
       </div>
     </header>
@@ -324,7 +324,7 @@ function Hero() {
           <h1 style={{ whiteSpace: "pre-line" }}>{t.hero.h1}</h1>
           <p>{t.hero.p}</p>
           <div className="lp-hero-ctas">
-            <Link href="/auth" className="lp-btn-primary lp-btn-lg">{t.hero.ctaPrimary} <ArrowRight size={18} /></Link>
+            <Link href="/auth?mode=register" className="lp-btn-primary lp-btn-lg">{t.hero.ctaPrimary} <ArrowRight size={18} /></Link>
             <a href={WHATSAPP_CONTACT_URL} className="lp-btn-whatsapp lp-btn-lg">
               <MessageCircle size={18} /> {t.hero.ctaWhatsapp}
             </a>
@@ -594,7 +594,7 @@ function PricingPreview() {
               <h3>{p.name}</h3>
               <strong>{p.price}<small>{p.period}</small></strong>
               {p.sub && <span className="lp-pricing-sub">{p.sub}</span>}
-              <Link href="/auth" className={`lp-pricing-cta ${p.highlight ? "lp-pricing-cta-filled" : ""}`}>{p.cta}</Link>
+              <Link href="/auth?mode=register" className={`lp-pricing-cta ${p.highlight ? "lp-pricing-cta-filled" : ""}`}>{p.cta}</Link>
             </div>
           ))}
         </div>
@@ -664,7 +664,7 @@ function CtaBanner() {
           <h2>{t.cta.h2}</h2>
           <p>{t.cta.p}</p>
           <div className="lp-cta-buttons">
-            <Link href="/auth" className="lp-btn-white lp-btn-lg">{t.cta.ctaPrimary} <ArrowRight size={18} /></Link>
+            <Link href="/auth?mode=register" className="lp-btn-white lp-btn-lg">{t.cta.ctaPrimary} <ArrowRight size={18} /></Link>
             <a href={WHATSAPP_CONTACT_URL} className="lp-btn-whatsapp-outline lp-btn-lg">
               <MessageCircle size={18} /> {t.cta.ctaWhatsapp}
             </a>

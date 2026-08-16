@@ -4,7 +4,18 @@ from sqlalchemy.orm import DeclarativeBase
 
 from app.config import settings
 
-engine = create_async_engine(settings.DATABASE_URL, echo=False, pool_pre_ping=True)
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    echo=False,
+    pool_pre_ping=True,
+    # Le pooler Supabase en mode "Transaction" (pgbouncer) ne garde pas la
+    # session assez longtemps pour les prepared statements qu'asyncpg cree
+    # par defaut -> DuplicatePreparedStatementError des la 2e requete sur
+    # une connexion reutilisee. statement_cache_size=0 desactive ce cache
+    # cote client (asyncpg re-prepare chaque requete), seule option fiable
+    # tant qu'on passe par un pooler en mode transaction.
+    connect_args={"statement_cache_size": 0},
+)
 async_session = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 

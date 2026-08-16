@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import func, select
+from sqlalchemy import String, cast, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_current_profile, get_db_session
@@ -33,8 +33,11 @@ async def list_orders(
     query = select(Order).where(Order.profile_id == current_profile.id)
     count_query = select(func.count(Order.id)).where(Order.profile_id == current_profile.id)
     if order_status:
-        query = query.where(Order.status == order_status)
-        count_query = count_query.where(Order.status == order_status)
+        # orders.status est un enum Postgres cote base ; caster en texte
+        # evite "l'operateur n'existe pas : order_status = character varying"
+        # quand SQLAlchemy lie le parametre en VARCHAR.
+        query = query.where(cast(Order.status, String) == order_status)
+        count_query = count_query.where(cast(Order.status, String) == order_status)
     total_result = await db.execute(count_query)
     total = total_result.scalar()
     offset = (page - 1) * page_size

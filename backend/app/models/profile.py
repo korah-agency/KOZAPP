@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, String, Text, func
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database import Base
@@ -26,11 +26,16 @@ class Profile(Base):
     hours: Mapped[str | None] = mapped_column(Text)
     whatsapp_number: Mapped[str | None] = mapped_column(String(50))
     whatsapp_phone_number_id: Mapped[str | None] = mapped_column(String(50))
+    whatsapp_waba_id: Mapped[str | None] = mapped_column(String(50))
     whatsapp_token: Mapped[str | None] = mapped_column(Text)
+    whatsapp_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    agent_enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    agent_model: Mapped[str | None] = mapped_column(String(100))
     agent_tone: Mapped[str | None] = mapped_column(String(50), default="Chaleureux")
     agent_language: Mapped[str | None] = mapped_column(String(10), default="fr")
     agent_welcome: Mapped[str | None] = mapped_column(Text)
     agent_info: Mapped[str | None] = mapped_column(Text)
+    opening_hours: Mapped[dict | None] = mapped_column(JSONB)
     plan: Mapped[str] = mapped_column(String(20), nullable=False, default="decouverte", server_default="decouverte")
     reset_token_hash: Mapped[str | None] = mapped_column(String(64))
     reset_token_expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

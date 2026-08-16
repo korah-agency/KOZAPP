@@ -8,6 +8,12 @@ from app.models.order import Order, OrderItem
 from app.models.order_status_history import OrderStatusHistory
 from app.models.whatsapp_conversation import WhatsAppConversation
 from app.models.whatsapp_message import WhatsAppMessage
+from app.models.delivery_zone import DeliveryZone
+from app.models.message_template import MessageTemplate
+from app.models.followup_rule import FollowupRule
+from app.models.followup_send import FollowupSend
+from app.models.usage_counter import UsageCounter
+from app.models.activity_log import ActivityLog
 
 __all__ = [
     "Profile",
@@ -21,4 +27,10 @@ __all__ = [
     "OrderStatusHistory",
     "WhatsAppConversation",
     "WhatsAppMessage",
+    "DeliveryZone",
+    "MessageTemplate",
+    "FollowupRule",
+    "FollowupSend",
+    "UsageCounter",
+    "ActivityLog",
 ]

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, ForeignKey, String, Text, func
+from sqlalchemy import DateTime, ForeignKey, Numeric, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -23,6 +23,12 @@ class WhatsAppMessage(Base):
     whatsapp_message_id: Mapped[str | None] = mapped_column(String(100), unique=True)
     status: Mapped[str | None] = mapped_column(String(30))
     error_message: Mapped[str | None] = mapped_column(Text)
+    media_id: Mapped[str | None] = mapped_column(String(100))
+    media_mime_type: Mapped[str | None] = mapped_column(String(100))
+    transcript: Mapped[str | None] = mapped_column(Text)
+    template_name: Mapped[str | None] = mapped_column(String(100))
+    billing_category: Mapped[str | None] = mapped_column(String(20))
+    cost_estimate: Mapped[float | None] = mapped_column(Numeric(8, 2))
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
