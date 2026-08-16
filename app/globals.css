@@ -210,6 +210,7 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .lp-hero.lp-in-view::before, .lp-hero.lp-in-view::after { animation-play-state: running; }
 @keyframes heroGlowFloat { 0%, 100% { transform: translate3d(0, 0, 0) scale(1); } 50% { transform: translate3d(15px, -20px, 0) scale(1.08); } }
 .lp-hero-gradient { position: absolute; inset: 0; background: linear-gradient(135deg, #7f57a6 0%, #9b6bb5 30%, #c47aab 60%, #f381b0 100%); background-size: 180% 180%; animation: heroGradientMove 14s ease-in-out infinite alternate; animation-play-state: paused; }
+.lp-hero-gradient::before { content: ""; position: absolute; inset: 0; background: url("/bg.jpg") center / cover no-repeat; opacity: 0.3; filter: blur(8px); transform: scale(1.06); pointer-events: none; }
 .lp-hero.lp-in-view .lp-hero-gradient { animation-play-state: running; }
 @keyframes heroGradientMove { 0% { background-position: 0% 50%; } 100% { background-position: 100% 50%; } }
 .lp-hero-content { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; width: 100%; }
