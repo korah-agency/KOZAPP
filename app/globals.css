@@ -471,7 +471,7 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
    ================================================================ */
 .ob2-page { min-height: 100vh; padding: 20px; background: linear-gradient(120deg, #faf7fd, #f4eff8); }
 .ob2-header { max-width: 640px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-.ob2-back { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid var(--line-soft); color: var(--ink); text-decoration: none; }
+.ob2-back { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: #fff; border: 1px solid var(--line-soft); color: var(--ink); text-decoration: none; padding: 0; }
 .ob2-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--ink); font-family: var(--font-syne), sans-serif; font-weight: 800; font-size: 17px; }
 .ob2-logo img { height: 24px; width: auto; }
 .ob2-lang { display: flex; align-items: center; gap: 4px; padding: 5px 8px; border-radius: 20px; background: #fff; border: 1px solid var(--line-soft); color: #8a8390; font-size: 11px; font-weight: 600; }

@@ -29,7 +29,7 @@ function OnboardingContent() {
   return (
     <main className="ob2-page">
       <header className="ob2-header">
-        <a href="/" className="ob2-back"><ArrowLeft size={20} /></a>
+        <button type="button" className="ob2-back" onClick={step > 1 ? prev : () => { window.location.href = "/auth/transition"; }} aria-label="Retour"><ArrowLeft size={20} /></button>
         <a href="/" className="ob2-logo">
           <img src="/kozapp-logo.png" alt="Kozapp" />
         </a>
