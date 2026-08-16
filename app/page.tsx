@@ -68,7 +68,7 @@ const T = {
       gestion: [
         { title: "Commandes centralisées", stat: "100%", desc: "Chaque commande WhatsApp est enregistrée, suivie et archivée dans votre tableau de bord. Zéro commande oubliée.", statLabel: "automatisé" },
         { title: "Tableau de bord en temps réel", stat: "Temps réel", desc: "Revenus, produits vedettes, quartiers les plus actifs, taux de livraison — tout est visible d'un coup d'œil.", statLabel: "" },
-        { title: "Relances automatiques", stat: "+30%", desc: "Les relances automatiques ramènent les clients qui n'ont pas répondu. Suivi client sans effort.", statLabel: "de ventes en plus" },
+        { title: "Relances automatiques", stat: "+30%", desc: "Les relances automatiques ramènent les clients qui n'ont pas répondu. Suivi client sans effort.", statLabel: "de ventes" },
       ],
     },
     demo: {
