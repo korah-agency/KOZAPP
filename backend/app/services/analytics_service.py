@@ -307,6 +307,7 @@ async def get_insights(db: AsyncSession, profile: Profile, days: int | None = No
     """Agrege les 8 analytics avancees en un seul appel, pour la page
     Analytics du tableau de bord."""
     return {
+        "daily_sales": await get_daily_sales(db, profile.id, days or 30),
         "geo_breakdown": await get_geo_breakdown(db, profile.id, days),
         "conversion": await get_conversion_stats(db, profile.id, days),
         "peak_hours": await get_peak_hours(db, profile.id, days),

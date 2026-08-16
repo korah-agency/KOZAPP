@@ -238,6 +238,136 @@ Aujourd'hui / 7 jours / Ce mois / Tout), câblé sur le paramètre `days` de
 (voir #6) — ne pas le lier au sélecteur de période côté UI, ou l'indiquer
 clairement (ex. « à l'instant présent », pas de filtre appliqué).
 
+## Addendum — deux vrais graphiques (16 août 2026)
+
+> La page Analytics existe déjà (8 panneaux, tous en place et fonctionnels
+> — voir `Analytics()` dans `app/app/page.tsx:249`). Ce lot ne touche que
+> deux choses : remplacer le panneau #1 par un vrai bar chart, et ajouter
+> un nouveau panneau de tendance du CA. Le reste de la page ne bouge pas.
+>
+> Recommandation de design (skill `dataviz`, déjà appliquée à l'existant) :
+> sur 8 analytics, seules 2 méritent un vrai graphique — comparer une
+> magnitude sur des catégories (quartiers, heures). Tout le reste (ratios,
+> listes, poignées de chiffres) reste volontairement en stat tiles/listes.
+> Ce lot ajoute le 3ᵉ graphique légitime : une tendance dans le temps
+> (CA jour par jour), qui manquait.
+
+### A. Remplacer la répartition géographique par un vrai bar chart horizontal
+
+**Où** : panneau `{/* 1. Geo breakdown */}` dans `Analytics()`,
+`app/app/page.tsx:292-306`. Retirer le rendu actuel (`.zone-row` +
+`.mini-progress`, une barre de progression simplifiée) et le remplacer par
+un vrai bar chart. La donnée ne change pas : `insights.geo_breakdown`
+(déjà triée par `order_count` décroissant côté backend, jusqu'à 8 lignes).
+
+**Forme** : barres **horizontales** (pas verticales) — les noms de
+quartiers sont trop longs pour tenir sous des colonnes. C'est le cas
+"comparer une magnitude" du référentiel dataviz → une seule teinte
+séquentielle (`var(--purple)`), pas de dégradé par barre : la magnitude
+est portée par la *longueur*, pas par la couleur.
+
+**Specs des marques** (référence : `dataviz` skill,
+`marks-and-anatomy.md`) :
+- Épaisseur de barre ≤ 24px, jamais toute la hauteur de la ligne — laisser
+  de l'air au-dessus/en dessous.
+- Bout arrondi à 4px côté valeur, angle droit côté départ (la barre part
+  d'une ligne de base commune à gauche).
+- Écart de 2px entre barres (via `gap`, pas de bordure dessinée autour
+  d'une barre pour la séparer d'une autre).
+- Nom du quartier en label direct à gauche (déjà le cas) ; le total CA
+  (`total_revenue`) ne doit **pas** rester affiché en permanence en plus
+  de la longueur de barre — c'est une donnée secondaire, elle va dans le
+  tooltip. Seule la valeur qui définit la longueur de la barre
+  (`order_count`) peut être en label direct, au bout de la barre, **si**
+  elle tient sans être coupée ; sinon uniquement au survol.
+
+**Interaction** : chaque barre est sa propre cible de survol/focus
+(pas de crosshair, c'est un bar chart pas une ligne) — au survol/focus,
+la barre s'éclaircit légèrement et un tooltip affiche quartier + nombre
+de commandes + CA. Zone de survol au moins aussi grande que la barre
+elle-même (pas besoin d'élargir davantage, la barre est déjà large).
+
+**Implémentation** : pas de librairie de graphiques dans le projet
+(confirmé : ni recharts ni chart.js) — construire en HTML/CSS pur, dans
+le même esprit que `.hour-bars`/`.hour-bar` déjà présent dans
+`app/globals.css` (barres = `<div>` avec largeur en `%` calculée
+côté client par rapport au max de la série, pas de SVG nécessaire ici
+contrairement au graphique de tendance ci-dessous). Nouvelles classes CSS
+à ajouter (`app/globals.css`, section `ANALYTICS PAGE`) plutôt que de
+réutiliser `.zone-row`/`.mini-progress` qui doivent être retirées de ce
+panneau (elles peuvent rester définies dans le CSS si un autre panneau
+les utilise encore — vérifier avant de les supprimer du fichier).
+
+**État vide** : conserver `t.analytics.noData` si `geo_breakdown` est
+vide (comportement déjà en place, à garder).
+
+### B. Ajouter la tendance du CA (nouveau panneau)
+
+**Backend déjà fait** — `GET /api/analytics/insights` renvoie maintenant
+un champ `daily_sales` (identique au format déjà utilisé par
+`/api/analytics/summary` et déjà typé côté frontend dans
+`AnalyticsSummary` — juste absent du type `AnalyticsInsights` dans
+`lib/api.ts`, à ajouter) :
+```ts
+daily_sales: { date: string; order_count: number; total_revenue: number }[];
+```
+À ajouter dans le type `AnalyticsInsights` (`lib/api.ts`), juste avant
+`geo_breakdown`.
+
+**Forme** : tendance dans le temps, une seule série (le CA) → **ligne**
+avec une aire de remplissage légère (wash à ~10% d'opacité de
+`var(--purple)`, jamais un aplat saturé). Une seule série : **pas de
+légende** nécessaire, le titre du panneau (`t.analytics.revenueTrendTitle`,
+à créer) dit déjà ce qui est tracé.
+
+**Specs des marques** :
+- Ligne à 2px, jointures arrondies.
+- Un point terminal ≥ 8px (rayon ≥ 4px), avec un anneau de 2px dans la
+  couleur de fond pour rester lisible s'il croise la ligne.
+- Axe X : les dates (jours) ; axe Y : le CA en FCFA. Grille en gris
+  hairline (1px, trait plein, jamais pointillé), très discrète.
+- Ne pas labelliser chaque point — seul le point le plus récent (bout de
+  la ligne) porte une valeur directe ; le reste passe par le survol.
+
+**Interaction** : un **crosshair** vertical qui suit le pointeur et
+s'accroche à la date la plus proche (c'est le comportement attendu pour
+une ligne, différent du survol par-barre du bar chart ci-dessus) ; le
+tooltip affiche la date, le CA du jour et le nombre de commandes.
+
+**Filtre de période** : ce graphique doit répondre au **même sélecteur
+de période** déjà présent en haut de la page Analytics (`periodOptions` /
+`period.days`, déjà câblé sur `getAnalyticsInsights(period.days)`) — pas
+de sélecteur de dates séparé pour ce seul graphique.
+
+**Implémentation** : `app/globals.css` contient déjà des classes
+scaffoldées mais **inutilisées** pour exactement ce cas —
+`.chart-wrap`, `.chart`, `.chart .line`, `.chart .area`, `.chart-dot`,
+`.chart-y`, `.chart-days`, `.gridline` (`.g1/.g2/.g3`) — probablement
+prévues à l'origine pour le Dashboard puis jamais câblées. Les reprendre
+et les adapter plutôt que d'inventer de nouvelles classes ; construire le
+tracé en SVG inline (chemin `<path>` généré à partir de
+`insights.daily_sales`, pas de librairie).
+
+**Placement** : nouveau panneau pleine largeur (`style={{ gridColumn:
+"span 2" }}`, comme le panneau heures de forte activité), positionné en
+premier dans `.analytics-grid` — c'est le graphique le plus "titre" de la
+page, il doit ouvrir la vue plutôt que la fermer.
+
+**État vide** : `t.analytics.noData` si toutes les valeurs de la période
+sont à zéro (même logique que les autres panneaux).
+
+**Traductions à ajouter** (`lib/i18n.tsx`, namespace `analytics`, FR + EN) :
+`revenueTrendTitle` / `revenueTrendSubtitle`.
+
+### Vérification attendue
+
+Comme pour le lot précédent : `rm -rf .next && npm run build` doit passer
+sans erreur TypeScript avant de committer. Vérifier aussi qu'aucune classe
+CSS ajoutée n'entre en collision avec une règle existante ailleurs dans
+`globals.css` (c'est exactement le type de bug trouvé et corrigé sur le
+lot précédent avec `.zone-row`) — chercher chaque nouvelle classe dans le
+fichier avant de l'ajouter, pas seulement dans le nouveau bloc qu'on écrit.
+
 ## Ce qui n'est PAS dans ce lot
 
 Les 6 analytics identifiées comme "sans données" dans le rapport (marge
