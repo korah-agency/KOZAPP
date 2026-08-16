@@ -228,6 +228,7 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .lp-hero-content { position: relative; z-index: 2; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; align-items: center; width: 100%; }
 .lp-hero-text { color: #fff; }
 .lp-hero-text h1 { font-family: var(--font-syne), sans-serif; font-size: clamp(32px, 4.5vw, 56px); font-weight: 800; letter-spacing: -.05em; line-height: 1.08; margin: 0 0 18px; text-shadow: 0 8px 24px rgba(53, 27, 70, .12); }
+.lp-hero-text h1.lp-h1-en { font-size: clamp(26px, 3.6vw, 45px); letter-spacing: -.03em; }
 .lp-hero-text > p { color: rgba(255,255,255,.85); font-size: 15px; line-height: 1.7; margin: 0 0 28px; max-width: 480px; }
 .lp-hero-ctas { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
 .lp-hero-ctas .lp-btn-primary { background: #fff; color: var(--purple); box-shadow: 0 12px 32px rgba(78, 51, 95, .2); }
@@ -264,7 +265,7 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
    ================================================================ */
 .lp-social-proof-band { padding: 40px 0; background: #faf8fc; border-bottom: 1px solid #f0edf2; }
 .lp-proof-lead { text-align: center; font-size: 13px; font-weight: 600; color: var(--ink); margin: 0 0 22px; }
-.lp-proof-items { display: flex; justify-content: center; align-items: flex-start; gap: 36px; flex-wrap: wrap; }
+.lp-proof-items { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; align-items: flex-start; gap: 36px; }
 .lp-proof-item { display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; max-width: 160px; }
 .lp-proof-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; background: #f0e9f6; color: var(--purple); transition: transform .3s ease; }
 .lp-proof-item span:last-child { display: block; font-size: 11px; color: var(--muted); line-height: 1.5; }
@@ -296,10 +297,11 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
 .lp-benefit-card-h { display: flex; align-items: flex-start; gap: 14px; padding: 18px; border: 1px solid var(--line-soft); border-radius: 14px; background: #fff; margin-bottom: 12px; transition: box-shadow .2s, border-color .2s; }
 .lp-benefit-card-h:hover { box-shadow: var(--shadow); border-color: #e0d8ea; }
 .lp-benefit-card-h .lp-benefit-icon { margin-bottom: 0; }
-.lp-benefit-card-h .lp-benefit-text { flex: 1; }
-.lp-benefit-card-h .lp-benefit-text h4 { margin: 0 0 4px; font: 700 14px var(--font-syne), sans-serif; color: var(--ink); }
-.lp-benefit-card-h .lp-benefit-text p { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
-.lp-benefit-card-h .lp-benefit-stat { text-align: right; flex-shrink: 0; }
+.lp-benefit-body { flex: 1; min-width: 0; }
+.lp-benefit-top { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
+.lp-benefit-top h4 { margin: 0; font: 700 14px var(--font-syne), sans-serif; color: var(--ink); }
+.lp-benefit-body > p { margin: 4px 0 0; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.lp-benefit-card-h .lp-benefit-stat { text-align: right; flex-shrink: 0; margin-bottom: 0; }
 .lp-benefit-card-h .lp-benefit-stat strong { font: 700 20px var(--font-syne), sans-serif; color: var(--purple); letter-spacing: -.03em; display: block; }
 .lp-benefit-card-h .lp-benefit-stat span { font-size: 11px; color: var(--muted); }
 .lp-benefit-stat { display: flex; align-items: baseline; gap: 5px; margin-bottom: 8px; }
@@ -571,7 +573,7 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
   .lp-hero-ctas { justify-content: center; }
   .lp-hero-guarantees { justify-content: center; }
   .lp-hero-demo { margin-top: 30px; }
-  .lp-proof-items { gap: 24px; }
+  .lp-proof-items { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
   .lp-proof-divider { display: none; }
   .lp-ps-grid { grid-template-columns: 1fr; }
   .lp-benefits-split { grid-template-columns: 1fr; }
@@ -589,16 +591,18 @@ nav { display:grid; gap:5px; } nav button { min-height:44px; padding:0 12px; bor
   .lp-demo-phone { width: 260px; }
   .lp-hero-float-icon { display: none; }
   .lp-scroll-cue { display: none; }
-  .lp-proof-items { flex-direction: column; gap: 16px; }
+  .lp-proof-items { grid-template-columns: 1fr; gap: 16px; }
   .lp-benefits-split { grid-template-columns: 1fr; gap: 20px; }
   .lp-sectors-grid { grid-template-columns: 1fr; }
   .lp-pricing-cards-row { grid-template-columns: 1fr; }
   .lp-pricing-preview-header { flex-direction: column; align-items: flex-start; }
   .lp-cta-inner { padding: 36px 24px; }
   .lp-cta-guarantees { flex-direction: column; align-items: center; gap: 8px; }
-  .lp-footer-top { flex-direction: column; }
-  .lp-footer-links { align-items: flex-start; }
-  .lp-footer-bottom { flex-direction: column; gap: 6px; text-align: center; }
+  .lp-footer { text-align: center; }
+  .lp-footer-top { flex-direction: column; align-items: center; gap: 24px; }
+  .lp-footer-brand { max-width: none; display: flex; flex-direction: column; align-items: center; }
+  .lp-footer-links { align-items: center; }
+  .lp-footer-bottom { flex-direction: column; gap: 8px; text-align: center; align-items: center; }
   .lp-payment-methods { flex-direction: column; align-items: center; gap: 8px; }
   .pricing2-cards { grid-template-columns: 1fr; }
   .pricing2-cards-section { transform: none; }

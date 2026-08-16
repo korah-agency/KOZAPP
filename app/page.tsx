@@ -63,12 +63,12 @@ const T = {
       agent: [
         { title: "Réponse instantanée 24h/24", stat: "24h/24", desc: "Votre agent comprend français, anglais et pidgin. Il répond comme vous le feriez, avec le ton de votre boutique.", statLabel: "disponible" },
         { title: "Comprend les vocaux", stat: "2 langues", desc: "Les notes vocales de vos clients sont comprises et traitées comme du texte. Pas de perte d'information.", statLabel: "" },
-        { title: "Négocie intelligemment", stat: "0 perte", desc: "L'IA négocie dans les marges que vous fixez. Jamais en dessous de votre prix plancher.", statLabel: "de marge préservée" },
+        { title: "Négocie intelligemment", stat: "0 perte", desc: "L'IA négocie dans les marges que vous fixez. Jamais en dessous de votre prix plancher.", statLabel: "de marge" },
       ],
       gestion: [
         { title: "Commandes centralisées", stat: "100%", desc: "Chaque commande WhatsApp est enregistrée, suivie et archivée dans votre tableau de bord. Zéro commande oubliée.", statLabel: "automatisé" },
         { title: "Tableau de bord en temps réel", stat: "Temps réel", desc: "Revenus, produits vedettes, quartiers les plus actifs, taux de livraison — tout est visible d'un coup d'œil.", statLabel: "" },
-        { title: "Relances automatiques", stat: "+30%", desc: "Les relances automatiques ramènent les clients qui n'ont pas répondu. Suivi client sans effort.", statLabel: "de ventes en plus" },
+        { title: "Relances automatiques", stat: "+30%", desc: "Les relances automatiques ramènent les clients qui n'ont pas répondu. Suivi client sans effort.", statLabel: "de ventes" },
       ],
     },
     demo: {
@@ -187,7 +187,7 @@ const T = {
       agent: [
         { title: "Instant replies, 24/7", stat: "24/7", desc: "Your agent understands French, English, and Pidgin. It replies the way you would, in your shop's tone.", statLabel: "available" },
         { title: "Understands voice notes", stat: "2 languages", desc: "Your customers' voice notes are understood and handled just like text. Nothing gets lost.", statLabel: "" },
-        { title: "Negotiates intelligently", stat: "0 loss", desc: "The AI negotiates within the margins you set. Never below your floor price.", statLabel: "margin preserved" },
+        { title: "Negotiates intelligently", stat: "0 loss", desc: "The AI negotiates within the margins you set. Never below your floor price.", statLabel: "margin" },
       ],
       gestion: [
         { title: "Centralized orders", stat: "100%", desc: "Every WhatsApp order is recorded, tracked, and archived in your dashboard. Zero orders forgotten.", statLabel: "automated" },
@@ -296,7 +296,7 @@ function Navbar() {
 
 /* ─── Bloc 2 : Hero — résultat concret + vrai produit ─── */
 function Hero() {
-  const { t } = useT();
+  const { lang, t } = useT();
   const [chatStep, setChatStep] = useState(0);
   const [paused, setPaused] = useState(false);
   const { ref: viewportRef, visible: inViewport } = useInView(0.2, false);
@@ -321,7 +321,7 @@ function Hero() {
       <div className="lp-hero-gradient" />
       <div className="lp-hero-content">
         <div className="lp-hero-text">
-          <h1 style={{ whiteSpace: "pre-line" }}>{t.hero.h1}</h1>
+          <h1 className={lang === "en" ? "lp-h1-en" : undefined} style={{ whiteSpace: "pre-line" }}>{t.hero.h1}</h1>
           <p>{t.hero.p}</p>
           <div className="lp-hero-ctas">
             <Link href="/auth?mode=register" className="lp-btn-primary lp-btn-lg">{t.hero.ctaPrimary} <ArrowRight size={18} /></Link>
@@ -432,6 +432,24 @@ function ProblemSolution() {
 }
 
 /* ─── Bloc 5 : Fonctionnalités transformées en bénéfices ─── */
+function BenefitCard({ icon, b }: { icon: React.ReactNode; b: { title: string; desc: string; stat: string; statLabel: string } }) {
+  return (
+    <div className="lp-benefit-card-h">
+      <span className="lp-benefit-icon">{icon}</span>
+      <div className="lp-benefit-body">
+        <div className="lp-benefit-top">
+          <h4>{b.title}</h4>
+          <div className="lp-benefit-stat">
+            <strong>{b.stat}</strong>
+            <span>{b.statLabel}</span>
+          </div>
+        </div>
+        <p>{b.desc}</p>
+      </div>
+    </div>
+  );
+}
+
 function BenefitsSection() {
   const { t } = useT();
   const { ref, visible } = useInView(0.1);
@@ -447,33 +465,13 @@ function BenefitsSection() {
           <div className={`lp-benefits-column lp-reveal ${visible ? "lp-visible" : ""}`}>
             <h3><MessageCircle size={18} /> {t.benefits.agentTitle}</h3>
             {t.benefits.agent.map((b, i) => (
-              <div key={i} className="lp-benefit-card-h">
-                <span className="lp-benefit-icon">{agentIcons[i]}</span>
-                <div className="lp-benefit-text">
-                  <h4>{b.title}</h4>
-                  <p>{b.desc}</p>
-                </div>
-                <div className="lp-benefit-stat">
-                  <strong>{b.stat}</strong>
-                  <span>{b.statLabel}</span>
-                </div>
-              </div>
+              <BenefitCard key={i} icon={agentIcons[i]} b={b} />
             ))}
           </div>
           <div className={`lp-benefits-column lp-reveal ${visible ? "lp-visible" : ""}`} style={{ transitionDelay: ".15s" }}>
             <h3><BarChart3 size={18} /> {t.benefits.gestionTitle}</h3>
             {t.benefits.gestion.map((b, i) => (
-              <div key={i} className="lp-benefit-card-h">
-                <span className="lp-benefit-icon">{gestionIcons[i]}</span>
-                <div className="lp-benefit-text">
-                  <h4>{b.title}</h4>
-                  <p>{b.desc}</p>
-                </div>
-                <div className="lp-benefit-stat">
-                  <strong>{b.stat}</strong>
-                  <span>{b.statLabel}</span>
-                </div>
-              </div>
+              <BenefitCard key={i} icon={gestionIcons[i]} b={b} />
             ))}
           </div>
         </div>

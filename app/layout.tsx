@@ -19,6 +19,7 @@ const syne = Syne({
 export const metadata: Metadata = {
   title: "Kozapp — Vendeur IA pour WhatsApp Business",
   description: "Kozapp transforme votre WhatsApp Business en canal de vente automatisé grâce à l'IA. Réponses instantanées, catalogue, commandes et relances gérées par l'IA.",
+  themeColor: "#ffffff",
   icons: {
     icon: "/kozapp-icon-square.png",
   },
