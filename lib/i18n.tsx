@@ -711,7 +711,8 @@ export function usePricingT() {
 export type OnboardingT = {
   skip: string; continueLabel: string; finish: string; stepOf: string;
   step1Title: string; step1Desc: string; fullName: string; fullNamePlaceholder: string;
-  role: string; rolePlaceholder: string;
+  role: string; rolePlaceholder: string; roleChoose: string; roles: string[];
+  roleOtherLabel: string; roleOtherPlaceholder: string;
   step2Title: string; step2Desc: string; companyName: string; companyNamePlaceholder: string;
   sector: string; chooseSector: string;
   sectorMode: string; sectorBeaute: string; sectorRestauration: string; sectorEcommerce: string;
@@ -728,6 +729,9 @@ const onboardingFr: OnboardingT = {
   step1Title: "Toi", step1Desc: "Pour que l'assistant parle en votre nom.",
   fullName: "Nom complet", fullNamePlaceholder: "Ex. Marie Kouam",
   role: "Fonction / rôle dans l'entreprise", rolePlaceholder: "Ex. Gérante, Responsable ventes",
+  roleChoose: "Choisir une fonction",
+  roles: ["Gérant(e)", "Propriétaire / Fondateur(trice)", "Responsable des ventes", "Responsable service client", "Employé(e)", "Comptable / Gestion", "Community manager", "Autre"],
+  roleOtherLabel: "Précisez votre fonction", roleOtherPlaceholder: "Ex. Directrice marketing",
   step2Title: "Ton entreprise", step2Desc: "Ce que vos clients voient dans la conversation.",
   companyName: "Nom de l'entreprise ou de la boutique", companyNamePlaceholder: "Ex. La Damé",
   sector: "Secteur d'activité", chooseSector: "Choisir un secteur",
@@ -747,6 +751,9 @@ const onboardingEn: OnboardingT = {
   step1Title: "You", step1Desc: "So the assistant can speak on your behalf.",
   fullName: "Full name", fullNamePlaceholder: "E.g. Marie Kouam",
   role: "Role / position in the company", rolePlaceholder: "E.g. Manager, Sales lead",
+  roleChoose: "Choose a role",
+  roles: ["Manager", "Owner / Founder", "Sales lead", "Customer service lead", "Employee", "Accountant / Finance", "Community manager", "Other"],
+  roleOtherLabel: "Specify your role", roleOtherPlaceholder: "E.g. Marketing director",
   step2Title: "Your company", step2Desc: "What your customers see in the conversation.",
   companyName: "Company or shop name", companyNamePlaceholder: "E.g. La Damé",
   sector: "Business sector", chooseSector: "Choose a sector",

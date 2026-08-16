@@ -14,6 +14,8 @@ function OnboardingContent() {
   const [selectedNeed, setSelectedNeed] = useState<string | null>(null);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [whatsappValid, setWhatsappValid] = useState(false);
+  const [role, setRole] = useState("");
+  const [otherRole, setOtherRole] = useState("");
 
   const sources = [
     { icon: <Facebook size={22} />, label: t.sourceFacebook },
@@ -64,8 +66,21 @@ function OnboardingContent() {
               </label>
               <label className="ob2-field">
                 <span>{t.role}</span>
-                <input type="text" placeholder={t.rolePlaceholder} />
+                <div className="ob2-select-wrapper">
+                  <select value={role} onChange={e => setRole(e.target.value)}>
+                    <option value="" disabled>{t.roleChoose}</option>
+                    {t.roles.map(r => (
+                      <option key={r} value={r}>{r}</option>
+                    ))}
+                  </select>
+                </div>
               </label>
+              {role === t.roles[t.roles.length - 1] && (
+                <label className="ob2-field">
+                  <span>{t.roleOtherLabel}</span>
+                  <input type="text" value={otherRole} onChange={e => setOtherRole(e.target.value)} placeholder={t.roleOtherPlaceholder} />
+                </label>
+              )}
             </div>
           </>
         )}
