@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ChevronDown, Phone } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { COUNTRY_CODES, DEFAULT_COUNTRY, type CountryCode } from "@/lib/country-codes";
 
 type PhoneInputProps = {
@@ -95,10 +95,9 @@ export default function PhoneInput({
           aria-label={`Indicatif pays : ${country.name}`}
         >
           <span className="country-flag" aria-hidden="true">{country.flag}</span>
-          <span className="country-dial">{country.dial}</span>
-          <ChevronDown size={14} className={open ? "rotated" : ""} />
-        </button>
-        <span className="phone-number-icon" aria-hidden="true"><Phone size={14} /></span>
+<span className="country-dial">{country.dial}</span>
+        <ChevronDown size={14} className={open ? "rotated" : ""} />
+      </button>
         <input
           id={id}
           type="tel"
